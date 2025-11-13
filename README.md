@@ -54,7 +54,7 @@ A comprehensive Laravel 12 + Blade-based maintenance management system designed 
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/reemi01/AIU-MMS
 cd AIU-MMS
 ```
 
