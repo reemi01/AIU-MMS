@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Weekly and Monthly Tasks — AIU MMS</title>
+  <style>
+    :root{--bg:#efefef;--muted:#6b7280;--accent:#7c3aed}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111}
+    .app{display:flex;min-height:100vh}
+
+    /* Sidebar (shared styles to match admin and employee pages) */
+  .sidebar{width:280px;background:#fff;padding:28px;border-right:0}
+  .profile{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02))}
+  .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:20px}
+  .sidebar h4{margin:0;font-size:16px}
+  .sidebar p{margin:0;color:var(--muted);font-size:13px}
+  .nav{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+  .nav a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;color:#111827;text-decoration:none}
+  .nav a .icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));display:inline-flex;align-items:center;justify-content:center}
+  .nav a.active, .nav a:hover{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+  .left-footer{margin-top:30px;color:var(--muted);font-size:13px}
+
+    /* Main content */
+    .main{flex:1;padding:22px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .title{font-size:30px;text-align:center;font-weight:800;margin:6px 0 18px}
+
+    .card{background:white;border-radius:8px;padding:18px;box-shadow:0 6px 18px rgba(2,6,23,.04);margin-bottom:18px}
+    .form-row{display:flex;gap:12px;align-items:center}
+    .form-row .box{flex:1;padding:14px;border-radius:6px;background:#efefef;border:1px solid #e1e1e1;text-align:center;font-weight:800}
+    .form-row .title-input{flex:2}
+    .add-btn{padding:12px 18px;background:#111;color:#fff;border:0;border-radius:6px;cursor:pointer}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .task-box{min-height:120px;border-radius:6px;background:white;padding:18px}
+    .task-box h3{margin:0 0 8px}
+    .task{padding:12px;border-radius:6px;border:1px solid #f1f1f1;margin-bottom:8px;background:#fafafa}
+    .task .desc{color:var(--muted);margin-top:8px}
+    .task .remove{float:right;background:transparent;border:0;color:#b91c1c;cursor:pointer}
+
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} .form-row{flex-direction:column} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="profile">
+        <div class="avatar">A</div>
+        <div>
+          <h4 id="adminName">Admin Name</h4>
+          <p style="margin:0;color:var(--muted);font-size:13px">HR Manager</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Main navigation">
+        <a href="admin_dashboard.html" class="nav-home"><span class="icon">🏠</span> Home</a>
+        <a href="employee.html" class="nav-employee"><span class="icon">👥</span> Employee</a>
+        <a href="weekly_monthly.html" class="nav-tasks"><span class="icon">🗓️</span> weekly/monthly tasks</a>
+        <a href="report.html" class="nav-report"><span class="icon">📊</span> Report</a>
+         <a href="addtasks.html"><span class="icon">👥</span> Add tasks</a>
+  <a href="add_assets.html"><span class="icon">➕</span> Add Lift/Chiller</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <input placeholder="Search" style="flex:1;padding:10px 14px;border-radius:18px;border:1px solid #e6e6ef;background:white;margin-right:18px" />
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="color:var(--muted)">Admin ▾</div>
+        </div>
+      </div>
+
+      <h1 class="title">Weekly and Monthly Task</h1>
+
+      <div class="card">
+        <h3 style="margin-top:0">Add New Task</h3>
+        <div class="form-row">
+          <select id="type" class="box" aria-label="Equipment type">
+            <option value="Lift">LIFT/ CHILLER - Lift</option>
+            <option value="Chiller">LIFT/ CHILLER - Chiller</option>
+          </select>
+          <select id="frequency" class="box" aria-label="Frequency">
+            <option value="weekly">WEEKLY</option>
+            <option value="monthly">MONTHLY</option>
+          </select>
+          <input id="taskTitle" class="title-input" placeholder="Task Title" />
+          <button id="addTask" class="add-btn">ADD</button>
+        </div>
+        <div style="margin-top:12px">
+          <textarea id="taskDesc" rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e6e6ef" placeholder="Description (optional)"></textarea>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="task-box" aria-label="Lift weekly tasks">
+          <h3>Lift weekly Task</h3>
+          <div id="lift-weekly"></div>
+        </div>
+        <div class="task-box" aria-label="Lift monthly tasks">
+          <h3>Lift monthly Task</h3>
+          <div id="lift-monthly"></div>
+        </div>
+
+        <div class="task-box" aria-label="Chiller weekly tasks">
+          <h3>Chiller Weekly Task</h3>
+          <div id="chiller-weekly"></div>
+        </div>
+        <div class="task-box" aria-label="Chiller monthly tasks">
+          <h3>Chiller monthly Task</h3>
+          <div id="chiller-monthly"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    (function(){
+      // require admin session
+      try{
+        const user = JSON.parse(sessionStorage.getItem('aiu_user')||'null');
+        if(!user || user.role !== 'admin'){ window.location.href='login.html'; return; }
+        document.getElementById('adminName').textContent = user.name || 'Admin';
+
+        // tasks persistence
+        function readTasks(){
+          try{
+            const raw = localStorage.getItem('aiu_tasks');
+            if(raw){ const parsed = JSON.parse(raw); if(Array.isArray(parsed)) return parsed; }
+            // fallback to SAMPLE_TASKS with inferred type/frequency
+            if(typeof SAMPLE_TASKS !== 'undefined' && Array.isArray(SAMPLE_TASKS)){
+              return SAMPLE_TASKS.map((t,i)=>({
+                id: t.id || 'T-'+(1000+i),
+                title: t.title || ('Task '+(i+1)),
+                description: t.notes || '',
+                type: (t.title && /chiller/i.test(t.title)) || (t.equipmentId && /chiller/i.test(t.equipmentId)) ? 'Chiller' : 'Lift',
+                frequency: (t.title && /monthly/i.test(t.title)) ? 'monthly' : 'weekly'
+              }));
+            }
+            return [];
+          }catch(e){ return []; }
+        }
+        function saveTasks(list){ localStorage.setItem('aiu_tasks', JSON.stringify(list)); }
+
+        const containers = {
+          'Lift_weekly': document.getElementById('lift-weekly'),
+          'Lift_monthly': document.getElementById('lift-monthly'),
+          'Chiller_weekly': document.getElementById('chiller-weekly'),
+          'Chiller_monthly': document.getElementById('chiller-monthly')
+        };
+
+        function render(){
+          // clear
+          Object.values(containers).forEach(c=>c.innerHTML='');
+          tasks.forEach(task=>{
+            const key = task.type + '_' + task.frequency;
+            const container = containers[key];
+            if(!container) return;
+            const el = document.createElement('div'); el.className='task';
+            el.innerHTML = `<strong>${escapeHtml(task.title)}</strong><button class="remove" data-id="${task.id}">Remove</button><div class="desc">${escapeHtml(task.description||'')}</div>`;
+            container.appendChild(el);
+          });
+          // attach remove handlers
+          document.querySelectorAll('.remove').forEach(btn=> btn.addEventListener('click', removeTask));
+        }
+
+        function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        function removeTask(e){ const id = e.currentTarget.getAttribute('data-id'); const idx = tasks.findIndex(t=>t.id===id); if(idx>-1){ tasks.splice(idx,1); saveTasks(tasks); render(); } }
+
+        // initialize
+        const tasks = readTasks();
+        render();
+
+        // set active nav based on current path
+        try{
+          const path = location.pathname.split('/').pop() || 'weekly_monthly.html';
+          document.querySelectorAll('.nav a').forEach(a=>{
+            const href = a.getAttribute('href');
+            if(href && href.split('/').pop() === path) a.classList.add('active');
+          });
+        }catch(e){}
+
+        // Add task
+        document.getElementById('addTask').addEventListener('click', ()=>{
+          const type = document.getElementById('type').value;
+          const frequency = document.getElementById('frequency').value;
+          const title = document.getElementById('taskTitle').value.trim();
+          const description = document.getElementById('taskDesc').value.trim();
+          if(!title){ alert('Please provide a task title'); return; }
+          const id = 'T-'+(Date.now().toString(36));
+          const newTask = { id, title, description, type, frequency };
+          tasks.unshift(newTask);
+          saveTasks(tasks);
+          document.getElementById('taskTitle').value=''; document.getElementById('taskDesc').value='';
+          render();
+        });
+
+      }catch(e){ console.error(e); window.location.href='login.html'; }
+    })();
+  </script>
+</body>
+</html>

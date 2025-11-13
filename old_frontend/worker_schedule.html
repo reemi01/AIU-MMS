@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schedule — Worker — AIU MMS</title>
+  <style>
+    :root{--bg:#f2f2f4;--sidebar:#fff;--accent:#6b46ff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111827}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:var(--sidebar);padding:28px;border-right:0}
+    .profile{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .avatar{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .nav{display:flex;flex-direction:column;gap:10px}
+    .nav a{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;color:#111827;text-decoration:none}
+    .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+    .main{flex:1;padding:20px}
+    .topbar{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .search{flex:1;padding:10px 12px;border-radius:12px;border:1px solid #e8e8ee}
+    .filters{display:flex;gap:8px}
+    .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,.04)}
+    .day{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .day .date{width:160px;font-weight:700}
+    .day .list{flex:1;display:flex;flex-direction:column;gap:8px}
+    .task-card{background:#fff;border:1px solid #eef2ff;padding:12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+    .task-left{display:flex;gap:12px;align-items:center}
+    .task-info{min-width:0}
+    .meta{color:var(--muted);font-size:13px}
+    .small-muted{color:var(--muted);font-size:13px}
+    .badge{padding:6px 8px;border-radius:999px;font-weight:700}
+    @media (max-width:900px){ .sidebar{display:none} .day{flex-direction:column} .day .date{width:auto} }
+    .notif-btn{position:relative;border:0;background:transparent;padding:6px;font-size:18px;cursor:pointer}
+    .notif-badge{position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;border-radius:999px;padding:2px 6px;font-size:12px;display:none}
+    .notif-panel{position:absolute;right:22px;top:62px;width:320px;background:#fff;border-radius:8px;box-shadow:0 12px 30px rgba(2,6,23,.12);z-index:60}
+    .notif-panel .item{padding:10px;border-bottom:1px solid #f1f1f5}
+    .notif-panel .item:last-child{border-bottom:0}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="profile">
+        <div class="avatar" id="sideAvatar">W</div>
+        <div>
+          <div id="sideName" style="font-weight:700">Worker</div>
+          <div style="font-size:13px;color:var(--muted)">Technician</div>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Worker navigation">
+        <a href="worker.html"><span class="icon">🏠</span> Dashboard</a>
+        <a href="worker_tasks.html"><span class="icon">🧾</span> My Tasks</a>
+        <a href="worker_schedule.html" class="active"><span class="icon">�️</span> Schedule</a>
+        <a href="worker_reports.html"><span class="icon">�</span> Upload Report</a>
+  <a href="worker_manage.html"><span class="icon">⚙️</span> Manage Account</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2 style="margin:0">My Schedule</h2>
+          <div class="small-muted">Tasks assigned to you, grouped by date</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <div style="position:relative">
+              <button id="notifBtn" class="notif-btn">🔔</button>
+              <div id="notifBadge" class="notif-badge" aria-hidden="true">0</div>
+              <div id="notifPanel" class="notif-panel" style="display:none">
+                <div style="padding:10px;font-weight:700">Notifications</div>
+                <div id="notifList"></div>
+                <div style="padding:10px;text-align:center"><button id="clearNotifs" class="btn" style="background:#ef4444">Mark all read</button></div>
+              </div>
+            </div>
+          <a href="worker_tasks.html" class="btn" style="background:#6b7280;padding:8px 10px">My Tasks</a>
+          <a href="worker.html" class="btn">Dashboard</a>
+        </div>
+      </div>
+
+      <div id="scheduleWrap" class="card">
+        <div id="scheduleContainer"></div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <div class="card">
+        <strong>Tips</strong>
+        <div class="small-muted" style="margin-top:8px">Click "My Tasks" to update a task, change status, or upload a proof image. Use the dashboard for KPIs.</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function(){
+      try{
+        const user = JSON.parse(sessionStorage.getItem('aiu_user')||'null');
+        if(!user || user.role !== 'worker'){ window.location.href = 'login.html'; return; }
+        document.getElementById('sideName').textContent = user.name || user.username || 'Worker';
+        document.getElementById('sideAvatar').textContent = (user.name||'W').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+
+        const KEY = 'aiu_tasks';
+        function read(){ try{ const r = localStorage.getItem(KEY); return r?JSON.parse(r):[] }catch(e){return[];} }
+        const tasks = read();
+
+        // group by iso date string (scheduledDate || dueDate || 'Unscheduled')
+        function iso(d){ if(!d) return 'Unscheduled'; const dt = new Date(d); if(isNaN(dt)) return 'Unscheduled'; return dt.toISOString().slice(0,10); }
+
+        function niceLabel(isoStr){ if(isoStr==='Unscheduled') return 'Unscheduled'; const d = new Date(isoStr + 'T00:00:00'); const today = new Date(); const base = new Date(today.getFullYear(), today.getMonth(), today.getDate()); const diff = Math.round((d - base)/(24*3600*1000)); if(diff===0) return 'Today'; if(diff===1) return 'Tomorrow'; if(diff===-1) return 'Yesterday'; return d.toLocaleDateString(undefined,{ weekday:'short', month:'short', day:'numeric' }); }
+
+        function isAssignedToUser(t){ return (t.workerId && user.id && t.workerId === user.id) || (t.workerName && t.workerName === user.name); }
+
+        const byDate = {};
+        tasks.filter(isAssignedToUser).forEach(t=>{ const k = iso(t.scheduledDate||t.dueDate||t.createdAt); byDate[k] = byDate[k] || []; byDate[k].push(t); });
+        const keys = Object.keys(byDate).sort((a,b)=>{ if(a==='Unscheduled') return 1; if(b==='Unscheduled') return -1; return new Date(a) - new Date(b); });
+
+        const container = document.getElementById('scheduleContainer');
+        if(keys.length===0){ container.innerHTML = '<div class="small-muted">No scheduled tasks found. Check My Tasks.</div>'; return; }
+
+        keys.forEach(k=>{
+          const day = document.createElement('div'); day.className='day';
+          const left = document.createElement('div'); left.className='date'; left.innerHTML = `<div style="font-size:14px">${niceLabel(k)}</div><div class="small-muted" style="font-size:12px">${k==='Unscheduled'? '': k}</div>`;
+          const list = document.createElement('div'); list.className='list';
+          byDate[k].sort((a,b)=> new Date(a.scheduledDate||a.dueDate||a.createdAt) - new Date(b.scheduledDate||b.dueDate||b.createdAt)).forEach(t=>{
+            const card = document.createElement('div'); card.className='task-card';
+            const leftArea = document.createElement('div'); leftArea.className='task-left';
+            const dot = document.createElement('div'); dot.style.width='36px'; dot.style.height='36px'; dot.style.borderRadius='8px'; dot.style.background='linear-gradient(135deg,#eef2ff,#f8fafc)'; dot.style.display='flex'; dot.style.alignItems='center'; dot.style.justifyContent='center'; dot.style.fontWeight='700'; dot.textContent = (t.equipment||'--').slice(0,2).toUpperCase();
+            const info = document.createElement('div'); info.className='task-info'; info.innerHTML = `<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(t.title||t.name||'Untitled')}</div><div class="meta">${escapeHtml(t.equipment||'')} • ${escapeHtml(t.frequency||'')}</div>`;
+            leftArea.appendChild(dot); leftArea.appendChild(info);
+
+            const rightArea = document.createElement('div');
+            const statusSpan = document.createElement('div'); statusSpan.className='badge';
+            if((t.status||'pending')==='completed'){ statusSpan.style.background='#10b981'; statusSpan.style.color='#fff'; statusSpan.textContent='Completed'; }
+            else if((t.status||'pending')==='inprogress'){ statusSpan.style.background='#0ea5e9'; statusSpan.style.color='#fff'; statusSpan.textContent='In Progress'; }
+            else { statusSpan.style.background='#f59e0b'; statusSpan.style.color='#422006'; statusSpan.textContent='Pending'; }
+            const openBtn = document.createElement('a'); openBtn.href = 'worker_tasks.html#' + (t.id||''); openBtn.textContent='Open'; openBtn.style.marginLeft='12px'; openBtn.className='small-muted';
+            rightArea.appendChild(statusSpan); rightArea.appendChild(openBtn);
+
+            card.appendChild(leftArea); card.appendChild(rightArea);
+            list.appendChild(card);
+          });
+
+          day.appendChild(left); day.appendChild(list); container.appendChild(day);
+        });
+
+        // helper
+        function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      }catch(e){ console.error(e); window.location.href='login.html'; }
+    })();
+  </script>
+  <script>
+    // notifications for schedule page
+    (function(){
+      function getAssignedTasks(){ try{ const arr = JSON.parse(localStorage.getItem('aiu_tasks')||'[]'); const session = JSON.parse(sessionStorage.getItem('aiu_user')||'null')||{}; const name = session.name || session.username; return arr.filter(t=> (t.workerId && session.id && t.workerId === session.id) || (t.workerName && t.workerName === name)); }catch(e){return[];} }
+      const notifBtn = document.getElementById('notifBtn');
+      const notifBadge = document.getElementById('notifBadge');
+      const notifPanel = document.getElementById('notifPanel');
+      const notifList = document.getElementById('notifList');
+      const clearNotifs = document.getElementById('clearNotifs');
+      function renderNotifs(){ const tasks = getAssignedTasks(); const unread = tasks.filter(t=> t.status === 'pending' ); if(unread.length>0){ notifBadge.style.display='inline-block'; notifBadge.textContent = unread.length; } else { notifBadge.style.display='none'; }
+        notifList.innerHTML=''; const sample = unread.length?unread:tasks.slice(0,5); if(sample.length===0) notifList.innerHTML = '<div class="muted" style="padding:10px">No notifications</div>';
+        sample.forEach(t=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div style="font-weight:700">${t.title}</div><div style="font-size:13px;color:#6b7280">${t.equipment} — ${new Date(t.createdAt||Date.now()).toLocaleString()}</div><div style="margin-top:6px"><button class="btn openTask" data-id="${t.id}">Open</button></div>`; notifList.appendChild(div); });
+        document.querySelectorAll('.openTask').forEach(b=> b.addEventListener('click',(e)=>{ const id=e.currentTarget.getAttribute('data-id'); window.location.href = 'worker_tasks.html#'+id; notifPanel.style.display='none'; })); }
+      notifBtn && notifBtn.addEventListener('click', ()=>{ if(notifPanel) notifPanel.style.display = notifPanel.style.display === 'none' ? 'block' : 'none'; renderNotifs(); });
+      clearNotifs && clearNotifs.addEventListener('click', ()=>{ const tasks = JSON.parse(localStorage.getItem('aiu_tasks')||'[]'); const session = JSON.parse(sessionStorage.getItem('aiu_user')||'null')||{}; const name = session.name || session.username; const updated = tasks.map(t=>{ if((t.workerId && session.id && t.workerId===session.id) || (t.workerName && t.workerName===name)) { t.status = t.status==='pending' ? 'inprogress' : t.status; } return t; }); localStorage.setItem('aiu_tasks', JSON.stringify(updated)); renderNotifs(); location.reload(); });
+      renderNotifs();
+    })();
+  </script>
+</body>
+</html>

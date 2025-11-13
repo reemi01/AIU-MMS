@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIU MMS — Report dashboard</title>
+  <style>
+    :root{--bg:#ececec;--muted:#7b7b7b;--accent:#7c3aed;--green:#10b981;--blue:#0ea5e9;--yellow:#f59e0b}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:#fff;padding:28px;border-right:0}
+    .profile{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02))}
+    .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:20px}
+    .nav a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;color:#111;text-decoration:none}
+    .nav a .icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));display:inline-flex;align-items:center;justify-content:center}
+    .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+
+    .main{flex:1;padding:18px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .title{font-size:28px;font-weight:800;text-align:center;flex:1}
+
+    .section{margin:18px 0;padding:12px}
+    .section h3{margin:6px 0;font-size:18px}
+    .table{background:#fff;border-radius:6px;padding:0 0 12px;overflow:hidden}
+    .table .head{display:flex;gap:8px;padding:12px;background:#12a65a;color:white;font-weight:800}
+    .table .row{display:flex;gap:8px;padding:18px;border-top:1px solid rgba(0,0,0,0.04);align-items:center}
+    .col{flex:1}
+    .col.small{flex:0 0 160px}
+
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;color:white;font-weight:700}
+    .badge.pending{background:var(--yellow);color:#422006}
+    .badge.inprogress{background:var(--blue)}
+    .badge.completed{background:var(--green)}
+
+    .notes-content {
+      max-height: 80px;
+      overflow-y: auto;
+      padding: 8px;
+      background: #f8f8f8;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.4;
+      margin: 4px 0;
+    }
+
+    .notes-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .notes-content::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .notes-content::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 3px;
+    }
+
+    .notes-content.empty {
+      color: var(--muted);
+      font-style: italic;
+      background: none;
+    }
+
+    .notes-content p {
+      margin: 4px 0;
+    }
+
+    .notes-content .timestamp {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .proof-img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .proof-img:hover {
+      transform: scale(1.05);
+    }
+
+    .proof-placeholder {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      padding: 10px;
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      max-width: 90%;
+      max-height: 90%;
+      position: relative;
+    }
+
+    .modal-content img {
+      max-width: 100%;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .close-modal {
+      position: absolute;
+      top: -40px;
+      right: 0;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 8px;
+    }
+
+    @media (max-width:900px){ 
+      .sidebar{display:none} 
+      .proof-img, .proof-placeholder {
+        width: 80px;
+        height: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="profile">
+        <div class="avatar">A</div>
+        <div>
+          <h4 id="adminName">Admin</h4>
+          <p style="margin:0;color:var(--muted);font-size:13px">Administrator</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="admin_dashboard.html"><span class="icon">🏠</span> Home</a>
+        <a href="employee.html"><span class="icon">👥</span> Employee</a>
+        <a href="weekly_monthly.html"><span class="icon">🗓️</span> weekly/monthly tasks</a>
+        <a href="report.html" class="active"><span class="icon">📊</span> Report</a>
+        <a href="information.html"><span class="icon">ℹ️</span> Information</a>
+          <a href="addtasks.html"><span class="icon">👥</span> Add tasks</a>
+        <a href="add_assets.html"><span class="icon">➕</span> Add Lift/Chiller</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <div style="width:44px"></div>
+        <div class="title">Report dashboard</div>
+        <div style="width:44px"></div>
+      </div>
+
+      <div id="content">
+        <!-- Four sections: Lift-Weekly, Lift-Monthly, Chiller-Weekly, Chiller-Monthly -->
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    (function(){
+      // guard admin session (soft guard: redirect to login.html if not admin)
+      try{ const user = JSON.parse(sessionStorage.getItem('aiu_user')||'null'); if(!user || user.role !== 'admin'){ /* allow view but prefer admin */ }
+        document.getElementById('adminName').textContent = (user && user.name) ? user.name : 'Admin';
+      }catch(e){}
+
+      // sample storage key
+      const KEY = 'aiu_reports_v1';
+
+      // Create modal for image preview
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <span class="close-modal">&times;</span>
+        <div class="modal-content">
+          <img src="" alt="Task Proof">
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Close modal when clicking outside
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.className === 'close-modal') {
+          modal.classList.remove('active');
+        }
+      });
+
+      // seed data: if data.js provides SAMPLE_TASKS use it, otherwise create sample entries
+      function seed(){
+        try{
+          const raw = localStorage.getItem(KEY);
+          if(raw) return JSON.parse(raw);
+          let seedTasks = [];
+          if(typeof SAMPLE_TASKS !== 'undefined' && Array.isArray(SAMPLE_TASKS) && SAMPLE_TASKS.length){
+            seedTasks = SAMPLE_TASKS.map((t,i)=>({ id: t.id || ('t'+i), system: t.system||'Lift', freq: t.freq||'weekly', liftId: t.liftId||('L-'+(100+i)), worker: t.worker||'Worker 1', status: t.status||'pending', date: t.date||'' }));
+          } else {
+            const now = new Date();
+            function mk(id, system, freq, worker, status){ 
+              const notes = [];
+              if (status === 'completed') {
+                notes.push(
+                  { text: `Completed ${system.toLowerCase()} maintenance check.`, timestamp: now.toLocaleString() },
+                  { text: `All systems functioning properly. Regular maintenance performed.`, timestamp: new Date(now - 3600000).toLocaleString() }
+                );
+              } else if (status === 'inprogress') {
+                notes.push(
+                  { text: `Started ${system.toLowerCase()} maintenance check.`, timestamp: now.toLocaleString() },
+                  { text: `Initial inspection completed. Working on routine maintenance.`, timestamp: new Date(now - 1800000).toLocaleString() }
+                );
+              }
+              return { 
+                id, 
+                system, 
+                freq, 
+                liftId: id.toUpperCase(), 
+                worker, 
+                status, 
+                date: status === 'completed' ? now.toLocaleDateString() : '',
+                notes: notes
+              } 
+            }
+            seedTasks = [
+              mk('L1','Lift','weekly','Ali','pending'),
+              mk('L2','Lift','weekly','Omar','inprogress'),
+              mk('L3','Lift','monthly','Khan','completed'),
+              mk('C1','Chiller','weekly','Zara','pending'),
+              mk('C2','Chiller','monthly','Hassan','inprogress'),
+              mk('C3','Chiller','monthly','Naveed','completed')
+            ];
+          }
+          localStorage.setItem(KEY, JSON.stringify(seedTasks));
+          return seedTasks;
+        }catch(e){ return []; }
+      }
+
+      let tasks = seed();
+
+      function save(){ localStorage.setItem(KEY, JSON.stringify(tasks)); }
+
+      function createSection(title, system, freq){
+        const id = (system+'-'+freq).toLowerCase();
+        const el = document.createElement('section'); el.className='section';
+        const h = document.createElement('h3'); h.textContent = title; el.appendChild(h);
+        const table = document.createElement('div'); table.className='table';
+        const head = document.createElement('div'); head.className='head';
+        head.innerHTML = '<div class="col">Name</div><div class="col">Worker</div><div class="col">Notes</div><div class="col small">Status</div><div class="col small">Date</div><div class="col small">Proof</div>';
+        table.appendChild(head);
+        const body = document.createElement('div'); body.id = 'body-'+id; table.appendChild(body);
+        el.appendChild(table);
+        return el;
+      }
+
+      const content = document.getElementById('content');
+      const sections = [
+        { title: 'Lift-Weekly Task', system:'Lift', freq:'weekly'},
+        { title: 'Lift-Monthly Task', system:'Lift', freq:'monthly'},
+        { title: 'Chiller-Weekly Task', system:'Chiller', freq:'weekly'},
+        { title: 'Chiller-Monthly Task', system:'Chiller', freq:'monthly'}
+      ];
+
+      sections.forEach(s=> content.appendChild(createSection(s.title, s.system, s.freq)));
+
+      function statusBadge(status){
+        const span = document.createElement('span'); span.className='badge '+(status==='pending'?'pending':status==='inprogress'?'inprogress':'completed');
+        span.textContent = status === 'pending' ? 'Pending' : status === 'inprogress' ? 'In Progress' : 'Completed';
+        return span;
+      }
+
+      function render(){
+        sections.forEach(s=>{
+          const id = (s.system+'-'+s.freq).toLowerCase();
+          const body = document.getElementById('body-'+id);
+          body.innerHTML = '';
+          const list = tasks.filter(t=>t.system.toLowerCase() === s.system.toLowerCase() && t.freq.toLowerCase() === s.freq.toLowerCase());
+          if(list.length === 0){
+            const r = document.createElement('div'); r.className='row'; r.innerHTML = '<div class="col">&nbsp;</div><div class="col">&nbsp;</div><div class="col small">&nbsp;</div><div class="col small">&nbsp;</div><div class="col small">&nbsp;</div>';
+            body.appendChild(r);
+            return;
+          }
+          list.forEach(item=>{
+            const r = document.createElement('div'); r.className='row';
+            const colId = document.createElement('div'); colId.className='col'; colId.textContent = item.liftId || item.id;
+            const colWorker = document.createElement('div'); colWorker.className='col'; colWorker.textContent = item.worker || '';
+            
+            // Notes column
+            const colNotes = document.createElement('div'); 
+            colNotes.className = 'col';
+            const notesContent = document.createElement('div');
+            notesContent.className = 'notes-content' + (!item.notes || item.notes.length === 0 ? ' empty' : '');
+            
+            if (item.notes && item.notes.length > 0) {
+                item.notes.forEach(note => {
+                    const noteElement = document.createElement('p');
+                    noteElement.textContent = note.text;
+                    const timestamp = document.createElement('div');
+                    timestamp.className = 'timestamp';
+                    timestamp.textContent = note.timestamp;
+                    noteElement.appendChild(timestamp);
+                    notesContent.appendChild(noteElement);
+                });
+            } else {
+                notesContent.textContent = item.status === 'completed' ? 'No notes provided' : 
+                                         item.status === 'inprogress' ? 'Work in progress - Awaiting notes' : 
+                                         'Task not started';
+            }
+            colNotes.appendChild(notesContent);
+            
+            const colStatus = document.createElement('div'); colStatus.className='col small'; colStatus.appendChild(statusBadge(item.status || 'pending'));
+            const colDate = document.createElement('div'); colDate.className='col small'; colDate.textContent = item.date || '';
+            
+            // Proof column
+            const colProof = document.createElement('div'); 
+            colProof.className = 'col small';
+            
+            if (item.status === 'completed') {
+                // Using a sample image URL based on the task type
+                const proofUrl = item.system.toLowerCase() === 'lift' 
+                    ? 'https://images.unsplash.com/photo-1590674899484-d5640e854abe?w=500' // Lift maintenance image
+                    : 'https://images.unsplash.com/photo-1504280790108-7d0f16d22c84?w=500'; // Chiller maintenance image
+                
+                const img = document.createElement('img');
+                img.className = 'proof-img';
+                img.src = proofUrl;
+                img.alt = `${item.system} Maintenance Proof`;
+                img.addEventListener('click', () => {
+                    modal.querySelector('img').src = proofUrl;
+                    modal.classList.add('active');
+                });
+                colProof.appendChild(img);
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'proof-placeholder';
+                placeholder.textContent = item.status === 'pending' 
+                    ? 'Awaiting task completion' 
+                    : 'Work in progress';
+                colProof.appendChild(placeholder);
+            }
+            
+            r.appendChild(colId); r.appendChild(colWorker); r.appendChild(colNotes); r.appendChild(colStatus); r.appendChild(colDate); r.appendChild(colProof);
+            body.appendChild(r);
+          });
+        });
+      }
+
+      function updateStatus(id, status){
+        const idx = tasks.findIndex(t=>t.id === id);
+        if(idx === -1) return;
+        tasks[idx].status = status;
+        tasks[idx].date = status === 'completed' ? new Date().toLocaleDateString() : tasks[idx].date || '';
+        save(); render();
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>

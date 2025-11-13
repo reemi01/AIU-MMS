@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIU MMS — Admin Manage Account</title>
+  <style>
+    :root{--bg:#f2f2f4;--sidebar:#ffffff;--accent:#6b46ff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111827}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:var(--sidebar);padding:28px;border-right:0}
+    .profile{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02))}
+    .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:20px}
+    .nav{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+    .nav a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;color:#111827;text-decoration:none}
+    .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+    .main{flex:1;padding:22px}
+    .card{max-width:900px;margin:20px auto;background:#fff;border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(2,6,23,.06)}
+    .row{display:flex;gap:18px;align-items:flex-start}
+    .col{flex:1}
+    .bigAvatar{width:132px;height:132px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:44px}
+    label{display:block;margin-top:10px;font-weight:600}
+    input[type=text], input[type=email], textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e6ef}
+    .btn{background:#4f46e5;color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;transition:0.3s}
+    .btn:hover{background:#4338ca}
+    .muted{color:#6b7280;font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="app" role="application">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="profile">
+        <div id="sideAvatar" class="avatar">A</div>
+        <div>
+          <h4 id="sideName">Admin Name</h4>
+          <p id="sideRole" class="muted">HR Manager</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Admin navigation">
+        <a href="admin_dashboard.html"><span class="icon">🏠</span> Home</a>
+        <a href="employee.html"><span class="icon">👥</span> Employee</a>
+        <a href="weekly_monthly.html"><span class="icon">🗓️</span> Weekly/Monthly Tasks</a>
+        <a href="report.html"><span class="icon">📊</span> Report</a>
+        <a href="#"><span class="icon">ℹ️</span> Information</a>
+        <a href="addtasks.html"><span class="icon">📝</span> Add Tasks</a>
+        <a href="add_assets.html"><span class="icon">➕</span> Add Lift/Chiller</a>
+        <a href="admin_manage.html" class="active"><span class="icon">⚙️</span> Manage Account</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="card">
+        <h2>Manage Account</h2>
+        <p class="muted">View and edit your admin profile. Changes are saved locally for this demo.</p>
+
+        <div class="row" style="margin-top:12px">
+          <div style="width:160px;text-align:center">
+            <div id="avatarPreview" class="bigAvatar">A</div>
+            <input id="avatarInput" type="file" accept="image/*" style="display:none" />
+            <div style="margin-top:12px">
+              <button id="changePhoto" class="btn">Change Photo</button>
+            </div>
+          </div>
+
+          <div class="col">
+            <label for="fullName">Full name</label>
+            <input id="fullName" type="text" />
+
+            <label for="email">Email</label>
+            <input id="email" type="email" />
+
+            <label for="phone">Phone</label>
+            <input id="phone" type="text" />
+
+            <label for="role">Role</label>
+            <input id="role" type="text" value="Admin" disabled />
+
+            <label for="notes">Notes</label>
+            <textarea id="notes" rows="4"></textarea>
+
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="saveBtn" class="btn">Save</button>
+              <button id="cancelBtn" class="btn" style="background:#e5e7eb;color:#111">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function(){
+      const ADMINS_KEY = 'aiu_admins';
+      function readAdmins(){ try{ return JSON.parse(localStorage.getItem(ADMINS_KEY)||'[]'); }catch(e){return[];} }
+      function saveAdmins(arr){ localStorage.setItem(ADMINS_KEY, JSON.stringify(arr)); }
+
+      const session = JSON.parse(sessionStorage.getItem('aiu_user')||'null') || { id:'a_demo', username:'admin', role:'admin', name:'Admin' };
+
+      // Sidebar populate
+      const sideName = document.getElementById('sideName');
+      const sideAvatar = document.getElementById('sideAvatar');
+      const sideRole = document.getElementById('sideRole');
+      sideName.textContent = session.name || 'Admin';
+      sideRole.textContent = session.role || 'HR Manager';
+      if(session.avatar){ sideAvatar.style.backgroundImage = `url(${session.avatar})`; sideAvatar.textContent = ''; }
+      else{ sideAvatar.textContent = (session.name||'Admin').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase(); }
+
+      // Elements
+      const avatarPreview = document.getElementById('avatarPreview');
+      const avatarInput = document.getElementById('avatarInput');
+      const changePhoto = document.getElementById('changePhoto');
+      const fullName = document.getElementById('fullName');
+      const email = document.getElementById('email');
+      const phone = document.getElementById('phone');
+      const notes = document.getElementById('notes');
+      const saveBtn = document.getElementById('saveBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+
+      // Load Profile
+      function loadProfile(){
+        const admins = readAdmins();
+        const me = admins.find(a=> a.id === session.id) || session;
+        fullName.value = me.name || '';
+        email.value = me.email || '';
+        phone.value = me.phone || '';
+        notes.value = me.notes || '';
+        if(me.avatar){ avatarPreview.style.backgroundImage = `url(${me.avatar})`; avatarPreview.textContent = ''; }
+        else{ avatarPreview.style.backgroundImage = 'none'; avatarPreview.textContent = (me.name||'A').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase(); }
+      }
+
+      changePhoto.addEventListener('click', ()=> avatarInput.click());
+      avatarInput.addEventListener('change',(e)=>{
+        const f = e.target.files && e.target.files[0]; if(!f) return;
+        const r=new FileReader();
+        r.onload=()=>{
+          avatarPreview.style.backgroundImage = `url(${r.result})`;
+          avatarPreview.textContent = '';
+          avatarPreview.dataset.preview = r.result;
+          sideAvatar.style.backgroundImage = `url(${r.result})`;
+          sideAvatar.textContent = '';
+          session.avatar = r.result;
+          sessionStorage.setItem('aiu_user', JSON.stringify(session));
+        };
+        r.readAsDataURL(f);
+      });
+
+      saveBtn.addEventListener('click', ()=>{
+        const admins = readAdmins();
+        const idx = admins.findIndex(a=> a.id === session.id);
+        const payload = {
+          id: session.id,
+          username: session.username || session.id,
+          name: fullName.value.trim(),
+          email: email.value.trim(),
+          phone: phone.value.trim(),
+          role: 'admin',
+          notes: notes.value.trim(),
+          avatar: avatarPreview.dataset.preview || session.avatar || null
+        };
+        if(idx === -1) admins.push(payload); else admins[idx] = Object.assign({}, admins[idx], payload);
+        saveAdmins(admins);
+        session.name = payload.name; session.email = payload.email; session.phone = payload.phone; session.avatar = payload.avatar;
+        sessionStorage.setItem('aiu_user', JSON.stringify(session));
+        sideName.textContent = session.name;
+        if(session.avatar) { sideAvatar.style.backgroundImage = `url(${session.avatar})`; sideAvatar.textContent = ''; }
+        alert('Profile saved locally.');
+      });
+
+      cancelBtn.addEventListener('click', ()=>{ window.location.href = 'admin_dashboard.html'; });
+
+      loadProfile();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIU MMS — Admin Dashboard</title>
+  <style>
+    :root{--bg:#f2f2f4;--sidebar:#ffffff;--accent:#6b46ff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111827}
+    .app{display:flex;min-height:100vh}
+  /* sidebar (consistent style) */
+  .sidebar{width:280px;background:var(--sidebar);padding:28px;border-right:0}
+  .profile{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02))}
+  .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:20px}
+  .profile h4{margin:0;font-size:18px}
+  .profile p{margin:0;color:var(--muted);font-size:13px}
+  .nav{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+  .nav a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;color:#111827;text-decoration:none}
+  .nav a .icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));display:inline-flex;align-items:center;justify-content:center}
+  .nav a .label{font-size:16px}
+  .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+  .left-footer{margin-top:36px;color:var(--muted);font-size:13px}
+    /* main */
+    .main{flex:1;padding:22px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .search{flex:1;padding:10px 14px;border-radius:18px;border:1px solid #e8e8ee;background:white;margin-right:18px}
+    .profile-short{display:flex;align-items:center;gap:10px}
+    .kpis{display:flex;gap:18px;align-items:flex-start;margin-top:8px}
+    .kpi{flex:1;padding:28px;border-radius:12px;background:white;box-shadow:0 6px 18px rgba(2,6,23,.06)}
+    .kpi h3{margin:0 0 14px;font-size:14px;color:#111827}
+    .kpi .value{font-size:28px;font-weight:800}
+    .cards{margin-top:26px}
+  .card{background:white;border-radius:8px;padding:24px;min-height:140px;margin-bottom:24px;box-shadow:0 6px 18px rgba(2,6,23,.04)}
+  /* notifications list inside card */
+  .notifs{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+  .notif-item{display:flex;gap:12px;align-items:flex-start}
+  .notif-icon{width:40px;height:40px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;background:#f3f4ff;color:#4c1d95;font-weight:700}
+  .notif-title{font-weight:700}
+  .notif-meta{color:var(--muted);font-size:13px}
+    /* colored KPI tiles like your screenshot */
+    .tile{height:120px;border-radius:14px;color:#fff;padding:18px;display:flex;flex-direction:column;justify-content:center}
+    .tile.purple{background:#c4b5fd}
+    .tile.yellow{background:#fde68a;color:#111}
+    .tile.green{background:#34d399}
+    /* responsive */
+    @media (max-width:900px){ .sidebar{display:none} .kpis{flex-direction:column} }
+  </style>
+</head>
+<body>
+  <div class="app" role="application">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="profile">
+        <div class="avatar" id="sideAvatar">A</div>
+        <div>
+          <h4 id="adminName">Admin Name</h4>
+          <p>HR Manager</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Main navigation">
+  <a href="admin_dashboard.html" class="active"><span class="icon">🏠</span> Home</a>
+  <a href="employee.html"><span class="icon">👥</span> Employee</a>
+  <a href="weekly_monthly.html"><span class="icon">🗓️</span> weekly/monthly tasks</a>
+        <a href="report.html"><span class="icon">📊</span> Report</a>
+          <a href="#"><span class="icon">ℹ️</span> Information</a>
+          <a href="addtasks.html"><span class="icon">👥</span> Add tasks</a>
+          <a href="add_assets.html"><span class="icon">➕</span> Add Lift/Chiller</a>
+      </nav>
+
+   
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <input class="search" placeholder="Search" aria-label="Search" />
+        <div class="profile-short">
+          
+           <button id="notifBtn" title="Notifications">🔔</button>
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px; cursor:pointer; padding:6px 10px; background:#f9fafb; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.08); transition:all 0.3s ease;"
+onmouseover="this.style.background='#f3f4f6'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.12)';"
+onmouseout="this.style.background='#f9fafb'; this.style.boxShadow='0 2px 5px rgba(0,0,0,0.08)';">
+  <div id="adminProfileBtn" role="button" tabindex="0" aria-label="Manage account" 
+       style="font-weight:600; color:#111827; font-size:15px;">
+    Admin
+  </div>
+  <div style="font-size:13px; color:#6b7280;">▼</div>
+</div>
+
+         <button id="logoutBtn" 
+style="
+  background-color:#ef4444;
+  color:#fff;
+  border:none;
+  padding:10px 20px;
+  margin-left:8px;
+  border-radius:8px;
+  font-size:15px;
+  font-weight:500;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(239,68,68,0.3);
+  transition:all 0.3s ease;
+"
+onmouseover="this.style.backgroundColor='#dc2626'; this.style.boxShadow='0 4px 10px rgba(239,68,68,0.4)'; this.style.transform='translateY(-2px)';"
+onmouseout="this.style.backgroundColor='#ef4444'; this.style.boxShadow='0 2px 6px rgba(239,68,68,0.3)'; this.style.transform='translateY(0)';"
+onmousedown="this.style.transform='translateY(0)';"
+onmouseup="this.style.transform='translateY(-2px)';"
+>
+Logout
+</button>
+
+         
+         
+        </div>
+      </div>
+
+      <h1 style="text-align:center;font-size:36px;margin:6px 0 18px;font-weight:800">Welcome Mr/Mrs admin</h1>
+
+      <div class="kpis">
+        <div class="kpi">
+          <h3 style="text-align:center">Total asset of lifts</h3>
+          <div class="tile purple" style="margin-top:12px;"> <!-- content left intentionally blank like your screenshot -->
+          </div>
+        </div>
+
+        <div class="kpi">
+          <h3 style="text-align:center">Total asset of chillers</h3>
+          <div class="tile yellow" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="kpi">
+          <h3 style="text-align:center">Task completed</h3>
+          <div class="tile green" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card" aria-label="Notifications and alerts">
+          <h3 style="margin:0 0 12px;font-size:16px">Notifications &amp; Alerts</h3>
+          <ul class="notifs" aria-live="polite">
+            <li class="notif-item">
+              <span class="notif-icon" aria-hidden>🔧</span>
+              <div>
+                <div class="notif-title">Lift A — Maintenance pending</div>
+                <div class="notif-meta">Assigned technician. Please schedule next service window.</div>
+              </div>
+            </li>
+            <li class="notif-item">
+              <span class="notif-icon" aria-hidden>🗓️</span>
+              <div>
+                <div class="notif-title">Monthly chiller check</div>
+                <div class="notif-meta">Scheduled for Sep 15 — prepare inspection checklist.</div>
+              </div>
+            </li>
+            <li class="notif-item">
+              <span class="notif-icon" aria-hidden>✅</span>
+              <div>
+                <div class="notif-title">Lift B — Weekly maintenance completed</div>
+                <div class="notif-meta">No action required. All checks passed.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="card" aria-label="Secondary content area" style="min-height:220px">
+          <h3 style="margin:0 0 12px;font-size:16px">Upcoming tasks list</h3>
+          <ul class="notifs" aria-live="polite">
+            <li class="notif-item">
+              <span class="notif-icon" aria-hidden>🔧</span>
+              <div>
+                <div class="notif-title">Lift C — Weekly maintenance</div>
+                <div class="notif-meta">Due: Sep 10</div>
+              </div>
+            </li>
+            <li class="notif-item">
+              <span class="notif-icon" aria-hidden>🧊</span>
+              <div>
+                <div class="notif-title">Chiller — Inspection</div>
+                <div class="notif-meta">Due: Sep 12</div>
+              </div>
+            </li>
+            <li class="notif-item">
+              <span class="notif-icon" aria-hidden>🛠️</span>
+              <div>
+                <div class="notif-title">Lift D — Monthly service</div>
+                <div class="notif-meta">Due: Sep 20</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // logout: clear session and go to login page
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('aiu_user'); // sign out
+  // optionally prevent back navigation:
+  window.location.replace('login.html');
+});
+    // Guard: require admin session
+    (function(){
+      try{
+        const user = JSON.parse(sessionStorage.getItem('aiu_user')||'null');
+        if(!user || user.role !== 'admin'){
+          // not logged in as admin -> redirect to login
+          window.location.href = 'login.html';
+          return;
+        }
+        // populate admin name and avatar initials
+        const name = user.name || user.username || 'Admin';
+        document.getElementById('adminName').textContent = name;
+        const initials = name.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+        document.getElementById('sideAvatar').textContent = initials;
+
+        // sample counts (replace with real data later)
+        const totalLifts = 12;
+        const totalChillers = 6;
+        const tasksCompleted = 28;
+        // show numbers inside tiles (centered)
+        document.querySelector('.tile.purple').innerHTML = `<div style="font-size:28px;font-weight:800;text-align:center">${totalLifts}</div>`;
+        document.querySelector('.tile.yellow').innerHTML = `<div style="font-size:28px;font-weight:800;text-align:center">${totalChillers}</div>`;
+        document.querySelector('.tile.green').innerHTML = `<div style="font-size:28px;font-weight:800;text-align:center">${tasksCompleted}</div>`;
+
+        // notifications click (demo)
+        document.getElementById('notifBtn').addEventListener('click', ()=> alert('No new notifications (demo)'));
+
+        // admin profile click/keyboard -> open manage account
+        (function(){
+          try{
+            const ap = document.getElementById('adminProfileBtn');
+            if(ap){
+              ap.addEventListener('click', ()=> { window.location.href = 'admin_manage.html'; });
+              ap.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { window.location.href = 'add_manage.html'; } });
+            }
+          }catch(e){ console.error(e); }
+        })();
+      }catch(e){ console.error(e); window.location.href='login.html'; }
+    })();
+  </script>
+</body>
+</html>

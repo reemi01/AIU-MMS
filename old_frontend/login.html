@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIU MMS — Admin Login</title>
+  <style>
+    /* Reset & base */
+    :root{--accent:#2b6ef6;--muted:#9aa4b2;--bg-overlay:rgba(0,0,0,.45)}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    body{
+      background-image: url('background.jpg'); /* replace with campus image if available */
+      background-size:cover;background-position:center;position:relative;color:#fff;
+    }
+    /* dark overlay */
+    .bg-overlay{position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.45));backdrop-filter:blur(2px)}
+    .wrap{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px}
+    .card{width:760px;max-width:96%;display:flex;gap:40px;align-items:center;background:rgba(255,255,255,0.03);border-radius:12px;padding:36px;box-shadow:0 10px 40px rgba(2,6,23,.5)}
+    .hero{flex:1}
+    .hero h1{margin:0 0 18px;font-size:28px;line-height:1.05;font-weight:700;text-shadow:0 4px 12px rgba(0,0,0,.5)}
+    .hero p{margin:0;color:var(--muted);opacity:.9}
+    .form{width:360px}
+    .logo{width:60px;height:60px;border-radius:8px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+    label{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:6px}
+    .input{width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,0.02);color:#fff;margin-bottom:12px}
+    .input:focus{outline:2px solid rgba(43,110,246,.14);border-color:rgba(43,110,246,.7)}
+    .btn{display:inline-block;padding:12px 18px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;width:100%}
+    .muted{color:var(--muted);font-size:13px;margin-top:8px;text-align:center}
+    .small{font-size:13px}
+    .role-select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(255, 254, 254, 0.02);color:#010101;margin-bottom:12px}
+    .error{color:#ffb4b4;background:rgba(255,0,0,0.06);padding:8px;border-radius:6px;margin-bottom:12px;display:none}
+    .forgot{display:block;text-align:right;margin-top:6px;color:rgba(255,255,255,.8);text-decoration:none}
+    /* small footer note */
+    .samples{margin-top:10px;font-size:13px;color:var(--muted);background:rgba(0,0,0,.12);padding:8px;border-radius:6px}
+    /* responsive */
+    @media (max-width:720px){ .card{flex-direction:column;padding:20px} .hero{display:none} .form{width:100%} }
+  </style>
+</head>
+<body>
+  <div class="bg-overlay" aria-hidden="true"></div>
+  <div class="wrap">
+    <main class="card" role="main" aria-labelledby="title">
+      <section class="hero" aria-hidden="true">
+        <h1 id="title">AIU Maintenance Management System</h1>
+        <p>Secure admin access to manage tasks, schedules, technicians and equipment monitoring.</p>
+      </section>
+
+      <section class="form" aria-labelledby="loginHeading">
+        <div class="logo" aria-hidden="true"></div>
+        <h2 id="loginHeading" style="margin:0 0 12px">Sign in</h2>
+
+        <div id="error" class="error" role="alert" aria-live="assertive"></div>
+
+        <form id="loginForm">
+          <label for="role">Role</label>
+          <select id="role" class="role-select" aria-label="Select role">
+            <option value="admin">Admin</option>
+            <option value="worker">Worker</option>
+          </select>
+
+          <label for="username">Username</label>
+          <input id="username" class="input" name="username" autocomplete="username" required aria-required="true" placeholder="Enter username" />
+
+          <label for="password">Password</label>
+          <input id="password" class="input" name="password" type="password" autocomplete="current-password" required aria-required="true" placeholder="••••••••" />
+
+          <button type="submit" class="btn" id="loginBtn">LOGIN</button>
+        </form>
+
+        <a class="forgot small" href="#" onclick="event.preventDefault();alert('Contact IT to reset your password');">Forgot password?</a>
+
+        <div class="samples" id="samples">
+          Sample admin credentials — username: <strong>admin</strong> | password: <strong>adminpass</strong>
+          <div style="margin-top:6px">Sample worker credentials — username: <strong>worker1</strong> | password: <strong>workerpass</strong></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Inline JS: role-based login handling and redirect
+    (function(){
+      const loginForm = document.getElementById('loginForm');
+      const errorEl = document.getElementById('error');
+      const ADMIN = { username: 'admin', password: 'adminpass' };
+      const WORKERS = [ { id: 'w1', username: 'worker1', password: 'workerpass', name: 'Worker One' } ];
+
+      function showError(msg){ errorEl.textContent = msg; errorEl.style.display = 'block'; setTimeout(()=>{ errorEl.style.display = 'none'; },5000); }
+
+      loginForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value;
+        const role = document.getElementById('role').value;
+        if(!u || !p){ showError('Please enter username and password'); return; }
+
+        if(role === 'admin'){
+          if(u === ADMIN.username && p === ADMIN.password){
+            sessionStorage.setItem('aiu_user', JSON.stringify({ username: u, role: 'admin', name: 'Administrator' }));
+            document.getElementById('loginBtn').textContent = 'Signing in...';
+            setTimeout(()=>{ window.location.href = 'admin_dashboard.html'; },600);
+            return;
+          } else { showError('Invalid admin credentials'); shake(); return; }
+        }
+
+        if(role === 'worker'){
+          const found = WORKERS.find(w=> w.username === u && w.password === p);
+          if(found){
+            // store session for worker with id to match tasks
+            sessionStorage.setItem('aiu_user', JSON.stringify({ id: found.id, username: found.username, role: 'worker', name: found.name }));
+            document.getElementById('loginBtn').textContent = 'Signing in...';
+            setTimeout(()=>{ window.location.href = 'worker.html'; },600);
+            return;
+          } else { showError('Invalid worker credentials'); shake(); return; }
+        }
+      });
+
+      function shake(){ const card = document.querySelector('.card'); card.style.transform = 'translateX(-10px)'; setTimeout(()=> card.style.transform = 'translateX(8px)'); setTimeout(()=> card.style.transform = 'translateX(0)'); }
+
+      // accessibility: focus username on load
+      window.addEventListener('load', ()=>{ 
+        document.getElementById('username').focus(); 
+        // seed demo tasks/reports for the sample worker so upload buttons appear
+        try{
+          const TASKS_KEY = 'aiu_tasks';
+          const REPORTS_KEY = 'aiu_reports';
+          const existing = localStorage.getItem(TASKS_KEY);
+          if(!existing || (Array.isArray(JSON.parse(existing)) && JSON.parse(existing).length === 0)){
+            const now = new Date();
+            const isoToday = now.toISOString().slice(0,10);
+            const isoTmr = new Date(now.getTime()+24*3600*1000).toISOString().slice(0,10);
+            const demo = [
+              { id:'t101', title:'Inspect Lift A', description:'Full inspection of Lift A: cables, brakes, safety switches', equipment:'Lift A', frequency:'weekly', scheduledDate: isoToday, scheduledTime:'09:00', workerId:'w1', workerName:'Worker One', status:'pending', createdAt: new Date().toISOString() },
+              { id:'t102', title:'Chiller filter clean', description:'Clean inlet filter and inspect fins', equipment:'Chiller 2', frequency:'monthly', scheduledDate: isoTmr, scheduledTime:'13:00', workerId:'w1', workerName:'Worker One', status:'pending', createdAt: new Date().toISOString() },
+              { id:'t103', title:'Lubricate motor bearings', description:'Apply grease to motor bearings per SOP', equipment:'Lift B', frequency:'weekly', scheduledDate: isoToday, scheduledTime:'11:00', workerId:'w1', workerName:'Worker One', status:'pending', createdAt: new Date().toISOString() }
+            ];
+            localStorage.setItem(TASKS_KEY, JSON.stringify(demo));
+          }
+          if(!localStorage.getItem(REPORTS_KEY)) localStorage.setItem(REPORTS_KEY, JSON.stringify([]));
+        }catch(e){ console.warn('Demo seed failed', e); }
+      });
+    })();
+  </script>
+</body>
+</html>

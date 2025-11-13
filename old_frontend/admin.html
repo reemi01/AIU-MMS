@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIU-MMS — Admin Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="topbar header">
+      <div class="flex">
+        <div class="avatar">M</div>
+        <div>
+          <div><strong id="adminName">Admin</strong></div>
+          <div class="small-muted">Administrator</div>
+        </div>
+      </div>
+      <div class="flex">
+        <input id="search" placeholder="Search tasks or workers..." />
+        <button id="logoutBtn" class="btn">Logout</button>
+      </div>
+    </div>
+
+    <div class="app">
+      <div class="sidebar card">
+        <h3>Admin Menu</h3>
+        <ul>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#tasks">Tasks</a></li>
+          <li><a href="#schedule">Schedules</a></li>
+          <li><a href="#workers">Workers</a></li>
+          <li><a href="#inventory">Inventory</a></li>
+          <li><a href="#reports">Reports</a></li>
+        </ul>
+      </div>
+
+      <div class="main">
+        <section id="overview" class="card">
+          <div class="header">
+            <h2>Overview</h2>
+            <div class="kpi">
+              <div class="tile">Total Tasks<br><strong id="k_totalTasks">0</strong></div>
+              <div class="tile">Workers<br><strong id="k_workers">0</strong></div>
+              <div class="tile">Completed<br><strong id="k_completed">0</strong></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col card small">
+              <h4>Equipment Status</h4>
+              <div id="equipList"></div>
+            </div>
+            <div class="col card small">
+              <h4>Notifications</h4>
+              <div id="adminNotifs"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tasks" class="card" style="margin-top:12px">
+          <div class="header">
+            <h3>Manage Tasks</h3>
+            <div class="form-inline">
+              <input id="newTaskTitle" placeholder="Task title" />
+              <select id="assignTo">
+              </select>
+              <button id="createTask" class="btn primary">Create & Assign</button>
+            </div>
+          </div>
+          <div id="taskList"></div>
+        </section>
+
+        <section id="workers" class="card" style="margin-top:12px">
+          <h3>Workers</h3>
+          <table class="table" id="workersTable">
+            <thead><tr><th>Name</th><th>Trade</th><th>Phone</th><th>Assigned</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <section id="inventory" class="card" style="margin-top:12px">
+          <h3>Inventory & Alerts</h3>
+          <div id="inventoryList"></div>
+        </section>
+
+        <section id="reports" class="card" style="margin-top:12px">
+          <h3>Reports</h3>
+          <div id="reportsArea">
+            <button id="genReport" class="btn">Generate Summary Report</button>
+            <pre id="reportOut" style="white-space:pre-wrap;margin-top:12px"></pre>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
