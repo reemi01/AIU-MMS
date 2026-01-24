@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upload — Worker — AIU MMS</title>
+  <style>
+    :root{--bg:#f2f2f4;--sidebar:#fff;--accent:#6b46ff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111827}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:var(--sidebar);padding:28px;border-right:0}
+    .profile{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .avatar{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .nav{display:flex;flex-direction:column;gap:10px}
+    .nav a{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;color:#111827;text-decoration:none}
+    .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+    .main{flex:1;padding:20px}
+    .topbar{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .notif-btn{position:relative;border:0;background:transparent;padding:6px;font-size:18px;cursor:pointer}
+    .notif-badge{position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;border-radius:999px;padding:2px 6px;font-size:12px;display:none}
+    .notif-panel{position:absolute;right:22px;top:62px;width:320px;background:#fff;border-radius:8px;box-shadow:0 12px 30px rgba(2,6,23,.12);z-index:60}
+    .notif-panel .item{padding:10px;border-bottom:1px solid #f1f1f5}
+    .notif-panel .item:last-child{border-bottom:0}
+    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,.04)}
+    .task-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;border:1px solid #eee;margin-bottom:10px}
+    .task-row .meta{color:var(--muted);font-size:13px}
+    .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+    input[type=file]{max-width:220px}
+    textarea{width:100%;min-height:90px;padding:8px;border-radius:8px;border:1px solid #eaeaea}
+    @media (max-width:900px){ .sidebar{display:none} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="profile">
+        <div class="avatar" id="sideAvatar">W</div>
+        <div>
+          <div id="sideName" style="font-weight:700">Worker</div>
+          <div style="font-size:13px;color:var(--muted)">Technician</div>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Worker navigation">
+        <a href="worker.html"><span class="icon">🏠</span> Dashboard</a>
+        <a href="worker_tasks.html"><span class="icon">🧾</span> My Tasks</a>
+        <a href="worker_schedule.html"><span class="icon">�️</span> Schedule</a>
+        <a href="worker_reports.html" class="active"><span class="icon">�</span> Upload Report</a>
+  <a href="worker_manage.html"><span class="icon">⚙️</span> Manage Account</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2 style="margin:0">Upload Proof / Reports</h2>
+          <div class="small-muted">Submit a short report and photo after completing maintenance</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <a href="worker_tasks.html" class="btn" style="background:#6b7280;padding:8px 10px">My Tasks</a>
+          <a href="worker.html" class="btn">Dashboard</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="assignedList"></div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Past Uploads</h3>
+        <div id="pastUploads"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function(){
+      // guard
+      const user = JSON.parse(sessionStorage.getItem('aiu_user')||'null');
+      if(!user || user.role !== 'worker'){ window.location.href = 'login.html'; return; }
+      document.getElementById('sideName').textContent = user.name || user.username || 'Worker';
+      document.getElementById('sideAvatar').textContent = (user.name||'W').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+
+      const TASKS_KEY = 'aiu_tasks';
+      const REPORTS_KEY = 'aiu_reports';
+
+      function readTasks(){ try{ const r = localStorage.getItem(TASKS_KEY); return r?JSON.parse(r):[] }catch(e){return[]} }
+      function saveTasks(arr){ localStorage.setItem(TASKS_KEY, JSON.stringify(arr)); }
+      function readReports(){ try{ const r = localStorage.getItem(REPORTS_KEY); return r?JSON.parse(r):[] }catch(e){return[]} }
+      function saveReports(arr){ localStorage.setItem(REPORTS_KEY, JSON.stringify(arr)); }
+
+      let tasks = readTasks();
+      let reports = readReports();
+
+      // small inline SVG sample image (percent-encoded) to use for demo
+      const SAMPLE_IMG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='480' height='320'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%236b46ff' font-size='20' font-family='Arial,Helvetica'>Sample Proof Image</text></svg>";
+
+      // seed a sample report for demo if none exist (keeps UI populated)
+      try{
+        if((!reports || reports.length===0) && tasks && tasks.length>0){
+          const demoTask = tasks.find(t=> t.workerId === user.id) || tasks[0];
+          if(demoTask){
+            const sampleReport = { id: 'r_sample', taskId: demoTask.id, workerId: user.id, workerName: user.name, note: 'Demo upload (sample data)', image: SAMPLE_IMG, createdAt: new Date().toISOString() };
+            reports.unshift(sampleReport);
+            saveReports(reports);
+            // also mark task completed locally for demo
+            const idx = tasks.findIndex(x=> x.id === demoTask.id);
+            if(idx !== -1){ tasks[idx].status = 'completed'; tasks[idx].completedAt = new Date().toLocaleString(); tasks[idx].proof = SAMPLE_IMG; saveTasks(tasks); }
+          }
+        }
+      }catch(e){ console.warn('Seeding demo report failed', e); }
+
+      function myAssigned(){ return tasks.filter(t => (t.workerId && user.id && t.workerId === user.id) || (t.workerName && t.workerName === user.name)); }
+
+      function renderAssigned(){
+        const list = document.getElementById('assignedList'); list.innerHTML = '';
+        const assigned = myAssigned();
+        if(assigned.length===0){
+          list.innerHTML = `
+            <div class="small-muted">No tasks assigned</div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="seedDemo" class="btn">Seed demo tasks</button>
+              <input id="generalUpload" type="file" accept="image/*" capture="environment" style="display:none" />
+              <button id="generalUploadBtn" class="btn" style="background:#6b7280">Upload image now</button>
+            </div>
+            <div id="generalPreview" style="margin-top:12px"></div>
+          `;
+          // wire the buttons
+          document.getElementById('seedDemo').addEventListener('click', ()=>{
+            // create demo tasks and re-render
+            const now = new Date(); const isoToday = now.toISOString().slice(0,10);
+            const demo = [
+              { id:'t201', title:'Demo: Inspect Lift', equipment:'Lift A', frequency:'weekly', workerId:user.id, workerName:user.name, status:'pending', createdAt:new Date().toISOString(), scheduledDate:isoToday },
+              { id:'t202', title:'Demo: Chiller Clean', equipment:'Chiller 2', frequency:'monthly', workerId:user.id, workerName:user.name, status:'pending', createdAt:new Date().toISOString() }
+            ];
+            const existing = readTasks(); demo.forEach(d => { if(!existing.find(x=>x.id===d.id)) existing.push(d); }); saveTasks(existing); tasks = existing; renderAssigned();
+          });
+          document.getElementById('generalUploadBtn').addEventListener('click', ()=>{ document.getElementById('generalUpload').click(); });
+          document.getElementById('generalUpload').addEventListener('change',(e)=>{
+            const f = e.target.files && e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{
+              const img = r.result; document.getElementById('generalPreview').innerHTML = `<img src="${img}" style="max-width:220px;border-radius:8px;border:1px solid #eee"/>`;
+              // save as a report with no taskId
+              const report = { id:'r_'+Date.now(), taskId:null, workerId:user.id, workerName:user.name, note:'Quick upload', image: img, createdAt:new Date().toISOString() };
+              reports.unshift(report); saveReports(reports);
+              alert('Image uploaded (demo)'); renderPast();
+            }; r.readAsDataURL(f);
+          });
+          return;
+        }
+        assigned.forEach(t=>{
+          const row = document.createElement('div'); row.className='task-row';
+          row.innerHTML = `
+            <div style="min-width:0">
+              <div style="font-weight:700">${escapeHtml(t.title||t.name||'Untitled')}</div>
+              <div class="meta">${escapeHtml(t.equipment||'')} • ${escapeHtml(t.frequency||'')}</div>
+            </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+              <div style="display:flex;gap:8px;align-items:center">
+                <input id="upfile-${t.id}" type="file" accept="image/*" data-id="${t.id}" class="upfile" capture="environment" style="display:none" />
+                <button data-target="upfile-${t.id}" class="btn openUpload">Upload</button>
+                <button data-id="${t.id}" class="btn sampleBtn" title="Use sample image">Use sample</button>
+              </div>
+              <textarea placeholder="Short report/notes" data-id="${t.id}" class="reportTxt"></textarea>
+              <div style="display:flex;gap:8px">
+                <button data-id="${t.id}" class="btn saveReport">Save Report</button>
+                <button data-id="${t.id}" class="btn" style="background:#6b7280">Skip</button>
+              </div>
+              <div id="preview-${t.id}"></div>
+            </div>
+          `;
+          list.appendChild(row);
+        });
+
+        // wire inputs
+        document.querySelectorAll('input.upfile').forEach(inp=>{
+          inp.addEventListener('change', (e)=>{
+            const f = e.target.files && e.target.files[0]; if(!f) return;
+            const r = new FileReader(); const id = inp.dataset.id;
+            r.onload = ()=>{ inp.dataset.preview = r.result; document.getElementById('preview-'+id).innerHTML = `<img src="${r.result}" style="max-width:160px;border-radius:8px;border:1px solid #eee"/>`; }
+            r.readAsDataURL(f);
+          });
+        });
+
+        // wire Upload buttons to open the hidden file inputs (enables camera on mobile)
+        document.querySelectorAll('.openUpload').forEach(b=> b.addEventListener('click',(e)=>{
+          const target = e.currentTarget.getAttribute('data-target');
+          const inp = document.getElementById(target);
+          if(inp) inp.click();
+        }));
+
+        // topbar upload removed per user preference
+
+        // wire sample buttons to fill a demo image and preview
+        document.querySelectorAll('.sampleBtn').forEach(b=> b.addEventListener('click', (e)=>{
+          const id = e.currentTarget.dataset.id;
+          const inp = document.querySelector(`input.upfile[data-id="${id}"]`);
+          if(inp){ inp.dataset.preview = SAMPLE_IMG; document.getElementById('preview-'+id).innerHTML = `<img src="${SAMPLE_IMG}" style="max-width:160px;border-radius:8px;border:1px solid #eee"/>`; }
+          const ta = document.querySelector(`textarea.reportTxt[data-id="${id}"]`);
+          if(ta && !ta.value) ta.value = 'Demo report (sample image)';
+        }));
+
+        document.querySelectorAll('.saveReport').forEach(b=> b.addEventListener('click', (e)=>{
+          const id = e.currentTarget.dataset.id;
+          const inp = document.querySelector(`input.upfile[data-id="${id}"]`);
+          const txt = document.querySelector(`textarea.reportTxt[data-id="${id}"]`).value.trim();
+          const img = inp && inp.dataset && inp.dataset.preview;
+          if(!img && !txt){ alert('Attach an image or write a short report'); return; }
+
+          // create report object
+          const report = { id: 'r_'+Date.now(), taskId: id, workerId: user.id, workerName: user.name, note: txt, image: img, createdAt: new Date().toISOString() };
+          reports.unshift(report); saveReports(reports);
+
+          // mark task completed if image present or note exists
+          const idx = tasks.findIndex(x=> x.id === id);
+          if(idx !== -1){ tasks[idx].status = 'completed'; tasks[idx].completedAt = new Date().toLocaleString(); if(img) tasks[idx].proof = img; saveTasks(tasks); }
+
+          renderAssigned(); renderPast();
+        }));
+      }
+
+      function renderPast(){
+        const wrap = document.getElementById('pastUploads'); wrap.innerHTML = '';
+        if(!reports || reports.length===0){ wrap.innerHTML = '<div class="small-muted">No uploads yet</div>'; return; }
+        const mine = reports.filter(r=> r.workerId === user.id);
+        if(mine.length===0){ wrap.innerHTML = '<div class="small-muted">No uploads yet</div>'; return; }
+        mine.forEach(r=>{
+          const el = document.createElement('div'); el.className='task-row';
+          el.innerHTML = `
+            <div style="min-width:0">
+              <div style="font-weight:700">${escapeHtml((tasks.find(t=>t.id===r.taskId)||{}).title || 'Task')}</div>
+              <div class="meta">${new Date(r.createdAt).toLocaleString()}</div>
+              <div style="margin-top:8px">${escapeHtml(r.note||'')}</div>
+            </div>
+            <div style="text-align:right"><div style="max-width:220px">${r.image? `<img src="${r.image}" style="max-width:220px;border-radius:8px;border:1px solid #eee"/>` : '<div class="small-muted">No image</div>'}</div></div>
+          `;
+          wrap.appendChild(el);
+        });
+      }
+
+      function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      renderAssigned(); renderPast();
+
+    })();
+  </script>
+  <script>
+    // notifications for reports page
+    (function(){
+      function getAssignedTasks(){ try{ const arr = JSON.parse(localStorage.getItem('aiu_tasks')||'[]'); const session = JSON.parse(sessionStorage.getItem('aiu_user')||'null')||{}; const name = session.name || session.username; return arr.filter(t=> (t.workerId && session.id && t.workerId === session.id) || (t.workerName && t.workerName === name)); }catch(e){return[];} }
+      const notifBtn = document.getElementById('notifBtn');
+      const notifBadge = document.getElementById('notifBadge');
+      const notifPanel = document.getElementById('notifPanel');
+      const notifList = document.getElementById('notifList');
+      const clearNotifs = document.getElementById('clearNotifs');
+      function renderNotifs(){ const tasks = getAssignedTasks(); const unread = tasks.filter(t=> t.status === 'pending' ); if(unread.length>0){ notifBadge.style.display='inline-block'; notifBadge.textContent = unread.length; } else { notifBadge.style.display='none'; }
+        notifList.innerHTML=''; const sample = unread.length?unread:tasks.slice(0,5); if(sample.length===0) notifList.innerHTML = '<div class="muted" style="padding:10px">No notifications</div>';
+        sample.forEach(t=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div style="font-weight:700">${t.title}</div><div style="font-size:13px;color:#6b7280">${t.equipment} — ${new Date(t.createdAt||Date.now()).toLocaleString()}</div><div style="margin-top:6px"><button class="btn openTask" data-id="${t.id}">Open</button></div>`; notifList.appendChild(div); });
+        document.querySelectorAll('.openTask').forEach(b=> b.addEventListener('click',(e)=>{ const id=e.currentTarget.getAttribute('data-id'); window.location.href = 'worker_tasks.html#'+id; notifPanel.style.display='none'; })); }
+      notifBtn && notifBtn.addEventListener('click', ()=>{ if(notifPanel) notifPanel.style.display = notifPanel.style.display === 'none' ? 'block' : 'none'; renderNotifs(); });
+      clearNotifs && clearNotifs.addEventListener('click', ()=>{ const tasks = JSON.parse(localStorage.getItem('aiu_tasks')||'[]'); const session = JSON.parse(sessionStorage.getItem('aiu_user')||'null')||{}; const name = session.name || session.username; const updated = tasks.map(t=>{ if((t.workerId && session.id && t.workerId===session.id) || (t.workerName && t.workerName===name)) { t.status = t.status==='pending' ? 'inprogress' : t.status; } return t; }); localStorage.setItem('aiu_tasks', JSON.stringify(updated)); renderNotifs(); location.reload(); });
+      renderNotifs();
+    })();
+  </script>
+</body>
+</html>

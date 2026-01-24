@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIU MMS — Employee Management</title>
+  <style>
+    :root{--bg:#ececec;--muted:#7b7b7b;--accent:#7c3aed}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:#fff;padding:28px;border-right:0}
+    .profile{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02))}
+    .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:20px}
+    .nav a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;color:#111;text-decoration:none}
+    .nav a .icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));display:inline-flex;align-items:center;justify-content:center}
+    .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+
+    .main{flex:1;padding:22px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .search{flex:1;padding:12px 18px;border-radius:28px;border:1px solid rgba(0,0,0,0.06);background:white;margin-right:18px}
+    .title{font-size:34px;text-align:center;font-weight:800;margin:8px 0 18px}
+
+    .row{display:flex;align-items:center;gap:12px}
+    .btn{padding:12px 20px;border-radius:6px;border:0;background:#111;color:white;cursor:pointer}
+    .small-input{padding:12px 16px;border-radius:28px;border:1px solid rgba(0,0,0,0.06);width:520px}
+
+    .kpi-card{margin-top:28px;width:420px;height:160px;border-radius:16px;background:linear-gradient(180deg, rgba(124,58,237,0.06), rgba(245,230,255,0.6));display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--accent);font-weight:800}
+    .kpi-card h3{margin:0;font-size:22px}
+    .kpi-card .value{font-size:34px;margin-top:8px}
+
+    .action-btn{padding:6px 10px;border-radius:6px;border:0;cursor:pointer;font-size:13px}
+    .edit-btn{background:#fff;border:1px solid #e6e6ef;margin-right:6px}
+    .del-btn{background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c}
+
+    .list-section{margin-top:38px}
+    table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden}
+    thead th{background:#fafafa;padding:12px;text-align:left;border-bottom:1px solid #f0f0f0}
+    tbody td{padding:12px;border-bottom:1px solid #f6f6f6}
+
+    @media (max-width:900px){ .sidebar{display:none} .small-input{width:100%} .kpi-card{width:100%} }
+  </style>
+</head>
+<body>
+  <div class="app" role="application">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="profile">
+        <div class="avatar" id="sideAvatar">A</div>
+        <div>
+          <h4 id="adminName">Admin Name</h4>
+          <p style="margin:0;color:var(--muted);font-size:13px">HR Manager</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="admin_dashboard.html"><span class="icon">🏠</span> Home</a>
+        <a href="employee.html"><span class="icon">👥</span> Employee</a>
+        <a href="weekly_monthly.html"><span class="icon">🗓️</span> weekly/monthly tasks</a>
+        <a href="report.html" class="active"><span class="icon">📊</span> Report</a>
+        <a href="information.html"><span class="icon">ℹ️</span> Information</a>
+        <a href="addtasks.html"><span class="icon">👥</span> Add tasks</a>
+        <a href="add_assets.html"><span class="icon">➕</span> Add Lift/Chiller</a>
+        <a href="addtasks"><span class="icon">👥</span> Add tasks</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <input id="empSearch" class="small-input" placeholder="search employee by name" aria-label="search employee" />
+            <button id="doSearch" class="btn" style="background:#fff;color:#111;border:1px solid rgba(0,0,0,0.06)">search</button>
+          </div>
+          <button id="addEmployee" class="btn">Add employee</button>
+        </div>
+      </div>
+
+      <h2 class="title">Employee Management</h2>
+
+      <div class="kpi-card" role="region" aria-label="Total employees">
+        <h3>Total employees</h3>
+        <div class="value" id="totalEmployees">0</div>
+      </div>
+
+      <section class="list-section">
+        <table aria-label="Employees table">
+          <thead>
+            <tr><th>Name</th><th>Username</th><th>Email</th><th>Password</th><th>Phone</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="employeesBody">
+          </tbody>
+        </table>
+      </section>
+      
+      <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;z-index:1000">
+        <div id="modal" style="background:#fff;width:680px;max-width:96%;border-radius:12px;padding:20px;box-shadow:0 20px 50px rgba(2,6,23,.3);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h3 style="margin:0">Add Employee</h3>
+            <button id="modalClose" style="background:transparent;border:0;font-size:20px;cursor:pointer">✕</button>
+          </div>
+          <form id="modalForm">
+            <div style="display:flex;gap:12px;margin-bottom:8px">
+              <input id="m_name" placeholder="Full name" style="flex:1;padding:10px;border:1px solid #e6e6ef;border-radius:8px" required />
+              <input id="m_phone" placeholder="Telephone" style="width:200px;padding:10px;border:1px solid #e6e6ef;border-radius:8px" required />
+            </div>
+            <div style="display:flex;gap:12px;margin-bottom:8px">
+              <input id="m_username" placeholder="Username (optional)" style="flex:1;padding:10px;border:1px solid #e6e6ef;border-radius:8px" />
+              <input id="m_password" type="password" placeholder="Password (optional)" style="width:200px;padding:10px;border:1px solid #e6e6ef;border-radius:8px" />
+            </div>
+            <div style="display:flex;gap:12px;margin-bottom:8px">
+              <input id="m_email" type="email" placeholder="Email (optional)" style="flex:1;padding:10px;border:1px solid #e6e6ef;border-radius:8px" />
+              <select id="m_sex" style="width:160px;padding:10px;border:1px solid #e6e6ef;border-radius:8px">
+                <option>Male</option>
+                <option>Female</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:12px;margin-bottom:8px">
+              <input id="m_dob" type="date" placeholder="Date of Birth" style="flex:1;padding:10px;border:1px solid #e6e6ef;border-radius:8px" />
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
+              <button type="button" id="modalCancel" style="padding:10px 12px;border-radius:8px;border:1px solid #e6e6ef;background:#fff;cursor:pointer">Cancel</button>
+              <button type="button" id="modalSave" style="padding:10px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer">Save Employee</button>
+            </div>
+            <div id="modalMsg" style="margin-top:8px;color:#b91c1c;display:none"></div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    (function(){
+      try{
+        const user = JSON.parse(sessionStorage.getItem('aiu_user')||'null');
+        if(!user || user.role !== 'admin'){
+          window.location.href = 'login.html';
+          return;
+        }
+        document.getElementById('adminName').textContent = user.name || 'Admin';
+        document.getElementById('sideAvatar').textContent = (user.name||'A').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+
+        const employeesBody = document.getElementById('employeesBody');
+        const totalEl = document.getElementById('totalEmployees');
+
+        function renderList(list){
+          console.debug('renderList called, items=', list.length);
+          employeesBody.innerHTML = '';
+          list.forEach(e=>{
+            console.debug('render worker', e.id, e.name, e.username, e.email, e.password);
+            const tr = document.createElement('tr');
+            const username = e.username || '';
+            const email = e.email || '';
+            const pwdMask = (e.password||'').replace(/./g,'•') || '';
+            tr.innerHTML = `
+              <td>${e.name}</td>
+              <td><span class="cred" data-id="${e.id}" data-field="username" data-visible="0">${username.replace(/./g,'•') || ''}</span> <button class="toggle-cred" data-id="${e.id}" data-field="username" aria-label="Toggle username">👁️</button></td>
+              <td>${email}</td>
+              <td><span class="cred" data-id="${e.id}" data-field="password" data-visible="0">${pwdMask}</span> <button class="toggle-cred" data-id="${e.id}" data-field="password" aria-label="Toggle password">👁️</button></td>
+              <td>${e.phone || ''}</td>
+              <td>
+                <button class="action-btn edit-btn" data-id="${e.id}" aria-label="Edit ${e.name}">Edit</button>
+                <button class="action-btn del-btn" data-id="${e.id}" aria-label="Delete ${e.name}">Delete</button>
+              </td>
+            `;
+            employeesBody.appendChild(tr);
+          });
+          totalEl.textContent = list.length || 0;
+        }
+
+        function readWorkers(){
+          try{
+            const raw = localStorage.getItem('aiu_workers');
+            if(raw){ const p = JSON.parse(raw); if(Array.isArray(p)) return p; }
+            if(typeof SAMPLE_WORKERS !== 'undefined' && Array.isArray(SAMPLE_WORKERS)) return SAMPLE_WORKERS.slice();
+            return [];
+          }catch(e){ return []; }
+        }
+        function saveWorkers(list){ localStorage.setItem('aiu_workers', JSON.stringify(list)); }
+
+        let workers = readWorkers();
+        if(workers.length === 0){
+          for(let i=0;i<5;i++) workers.push({ id: 'w'+i, name: 'Worker '+(i+1), username: 'worker'+(i+1), password: 'pass'+(i+1), email: 'worker'+(i+1)+'@example.com', phone: '03xx-xxxxxxx' });
+        }
+        renderList(workers);
+
+        const addBtn = document.getElementById('addEmployee');
+        const overlay = document.getElementById('modalOverlay');
+        const modalClose = document.getElementById('modalClose');
+        const modalCancel = document.getElementById('modalCancel');
+        const modalForm = document.getElementById('modalForm');
+        const modalMsg = document.getElementById('modalMsg');
+        const modalEl = document.getElementById('modal');
+        const modalTitle = modalEl.querySelector('h3');
+        const modalSaveBtn = document.getElementById('modalSave');
+        let editingId = null;
+
+        if(addBtn) addBtn.addEventListener('click', ()=> openModal());
+        if(modalClose) modalClose.addEventListener('click', closeModal);
+        if(modalCancel) modalCancel.addEventListener('click', closeModal);
+        if(overlay) overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+
+        if(modalSaveBtn){
+          modalSaveBtn.addEventListener('click', ()=>{
+            if(modalForm){
+              if(typeof modalForm.requestSubmit === 'function'){
+                modalForm.requestSubmit();
+              }else{
+                modalForm.dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
+              }
+            }
+          });
+        }
+
+        function openModal(worker){
+          if(worker){
+            editingId = worker.id;
+            modalTitle.textContent = 'Edit Employee';
+            modalSaveBtn.textContent = 'Update Employee';
+            document.getElementById('m_name').value = worker.name || '';
+            document.getElementById('m_phone').value = worker.phone || '';
+            document.getElementById('m_email').value = worker.email || '';
+            document.getElementById('m_username').value = worker.username || '';
+            document.getElementById('m_password').value = worker.password || '';
+            document.getElementById('m_sex').value = worker.sex || 'Male';
+            document.getElementById('m_dob').value = worker.dob || '';
+          }else{
+            editingId = null;
+            modalTitle.textContent = 'Add Employee';
+            modalSaveBtn.textContent = 'Save Employee';
+            modalForm.reset();
+            document.getElementById('m_sex').value = 'Male';
+            document.getElementById('m_username').value = '';
+            document.getElementById('m_password').value = '';
+            document.getElementById('m_dob').value = '';
+          }
+          overlay.style.display = 'flex';
+          setTimeout(()=> document.getElementById('m_name').focus(), 50);
+        }
+        function closeModal(){ overlay.style.display = 'none'; modalMsg.style.display='none'; modalForm.reset(); editingId = null; modalTitle.textContent = 'Add Employee'; modalSaveBtn.textContent = 'Save Employee'; }
+
+        modalForm.addEventListener('submit', (e)=>{
+          e.preventDefault();
+          const name = document.getElementById('m_name').value.trim();
+          const phone = document.getElementById('m_phone').value.trim();
+          const username = document.getElementById('m_username') ? document.getElementById('m_username').value.trim() : '';
+          const password = document.getElementById('m_password') ? document.getElementById('m_password').value : '';
+          const email = document.getElementById('m_email').value.trim();
+          const sex = document.getElementById('m_sex').value;
+          const dob = document.getElementById('m_dob').value;
+          console.debug('modal submit', {name, username, password, email, phone, sex, dob, editingId});
+          if(!name){ showModalMsg('Please enter a name'); return; }
+          if(!phone){ showModalMsg('Please enter a telephone'); return; }
+          if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showModalMsg('Please enter a valid email'); return; }
+
+          if(editingId){
+            const idx = workers.findIndex(w=>w.id === editingId);
+            if(idx !== -1){
+              workers[idx].name = name;
+              workers[idx].phone = phone;
+              workers[idx].username = username;
+              workers[idx].password = password;
+              workers[idx].email = email;
+              workers[idx].sex = sex;
+              workers[idx].dob = dob;
+              saveWorkers(workers);
+              renderList(workers);
+              showModalMsg('Updated — closing...', false);
+              setTimeout(()=> closeModal(), 600); 
+              return;
+            }
+          }
+
+          const newEmp = { id: 'w'+(Date.now().toString(36)), name, username, password, phone, email, sex, dob };
+          workers.unshift(newEmp);
+          saveWorkers(workers);
+          renderList(workers);
+          showModalMsg('Saved — closing...', false);
+          setTimeout(()=> closeModal(), 700);
+        });
+
+        function showModalMsg(msg, isError=true){ modalMsg.style.display='block'; modalMsg.style.color = isError ? '#b91c1c' : '#064e3b'; modalMsg.textContent = msg; }
+
+        document.getElementById('doSearch').addEventListener('click', ()=>{
+          const q = document.getElementById('empSearch').value.trim().toLowerCase();
+          if(!q){ renderList(workers); return; }
+          const filtered = workers.filter(w=>w.name.toLowerCase().includes(q));
+          renderList(filtered);
+        });
+
+        employeesBody.addEventListener('click', (evt)=>{
+          // toggle credential visibility if toggle button clicked
+          const toggle = evt.target.closest('.toggle-cred');
+          if(toggle){
+            const id = toggle.getAttribute('data-id');
+            const field = toggle.getAttribute('data-field');
+            const worker = workers.find(w=>w.id === id);
+            if(!worker) return;
+            const span = employeesBody.querySelector(`.cred[data-id="${id}"][data-field="${field}"]`);
+            if(!span) return;
+            const isVisible = span.getAttribute('data-visible') === '1';
+            if(isVisible){
+              // hide: mask with bullets matching length
+              const mask = (worker[field] || '').replace(/./g,'•') || '';
+              span.textContent = mask;
+              span.setAttribute('data-visible','0');
+            }else{
+              span.textContent = worker[field] || '';
+              span.setAttribute('data-visible','1');
+            }
+            return;
+          }
+
+          const edit = evt.target.closest('.edit-btn');
+          const del = evt.target.closest('.del-btn');
+          if(edit){
+            const id = edit.getAttribute('data-id');
+            const worker = workers.find(w=>w.id === id);
+            if(worker) openModal(worker);
+            return;
+          }
+          if(del){
+            const id = del.getAttribute('data-id');
+            const worker = workers.find(w=>w.id === id);
+            if(!worker) return;
+            const ok = confirm('Delete "'+worker.name+'"? This cannot be undone.');
+            if(!ok) return;
+            workers = workers.filter(w=>w.id !== id);
+            saveWorkers(workers);
+            renderList(workers);
+            return;
+          }
+        });
+
+        (function setActive(){
+          try{
+            const path = location.pathname.split('/').pop() || 'employee.html';
+            document.querySelectorAll('.nav a').forEach(a=>{
+              const href = a.getAttribute('href');
+              a.classList.toggle('active', href && href.split('/').pop() === path);
+            });
+          }catch(e){}
+        })();
+
+      }catch(e){ console.error(e); window.location.href='login.html'; }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php:*)",
+      "Bash(composer:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv *.html *.js *.css *.jpg old_frontend/)",
+      "Read(//c/laragon/www/**)",
+      "Bash(cp:*)",
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

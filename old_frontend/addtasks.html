@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Add and assign tasks — AIU MMS</title>
+  <style>
+    :root{--bg:#efefef;--muted:#6b7280;--accent:#0b48ff}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:#fff;padding:28px;border-right:0}
+    .profile{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02))}
+    .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:20px}
+    .nav a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;color:#111;text-decoration:none}
+    .nav a .icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));display:inline-flex;align-items:center;justify-content:center}
+    .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+
+    .main{flex:1;padding:18px}
+    .title{font-size:22px;font-weight:800;margin-bottom:12px}
+    .form{background:#fff;padding:18px;border-radius:6px}
+    .field{margin-bottom:12px}
+    .input, .select, textarea{width:100%;padding:16px;border-radius:14px;border:1px solid #111;background:#fff}
+    .btn{background:var(--accent);color:#fff;padding:10px 18px;border-radius:6px;border:0;cursor:pointer}
+
+    .board{background:#fff;padding:18px;margin-top:18px;border-radius:6px}
+    @media (max-width:900px){ .sidebar{display:none} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="profile">
+        <div class="avatar">A</div>
+        <div>
+          <h4 id="adminName">Admin</h4>
+          <p style="margin:0;color:var(--muted);font-size:13px">Administrator</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="admin_dashboard.html"><span class="icon">🏠</span> Home</a>
+        <a href="employee.html"><span class="icon">👥</span> Employee</a>
+        <a href="weekly_monthly.html"><span class="icon">🗓️</span> weekly/monthly tasks</a>
+        <a href="report.html"><span class="icon">📊</span> Report</a>
+        <a href="addtasks.html" class="active"><span class="icon">➕</span> Add tasks</a>
+        <a href="add_assets.html"><span class="icon">➕</span> Add Lift/Chiller</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="title">Assign task to worker</div>
+      <div class="form">
+        <div class="field"><select id="taskType" class="select"><option value="">Select type</option><option value="Lift">Lift</option><option value="Chiller">Chiller</option></select></div>
+        <div class="field"><select id="taskType" class="select"><option value="">Lift A</option><option value="Lift">Lift B</option><option value="Chiller">Lift C</option></select></div>
+        <div class="field"><select id="freq" class="select"><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+        <div class="field"><input id="title" class="input" placeholder="Task Title" /></div>
+        <div class="field"><select id="workerSelect" class="select"><option value="">Assign task to worker</option></select></div>
+        <div class="field"><input id="date" type="date" class="input" /></div>
+        <div class="field"><textarea id="desc" rows="3" class="input" placeholder="Task description"></textarea></div>
+        <div style="text-align:center"><button id="createBtn" class="btn">Create Task</button></div>
+      </div>
+
+      <div class="board">
+        <h3 style="margin-top:0">Task Board</h3>
+        <div style="overflow:auto;margin-top:12px">
+          <table style="width:100%;border-collapse:collapse">
+            <thead style="font-weight:800"><tr><th style="padding:12px;text-align:left">Task</th><th style="padding:12px;text-align:left">Worker</th><th style="padding:12px;text-align:left">Type</th><th style="padding:12px;text-align:left">Frequency</th><th style="padding:12px;text-align:left">Deadline</th><th style="padding:12px;text-align:left">Actions</th></tr></thead>
+            <tbody id="boardBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    (function(){
+      // populate equipment from saved lists
+      function read(key){ try{ const r = localStorage.getItem(key); return r?JSON.parse(r):[] }catch(e){return[]} }
+      const lifts = read('aiu_lifts_v1');
+      const chillers = read('aiu_chillers_v1');
+      const storedWorkers = read('aiu_workers');
+      const sampleWorkers = (typeof SAMPLE_WORKERS !== 'undefined' && Array.isArray(SAMPLE_WORKERS)) ? SAMPLE_WORKERS : [];
+      const workers = storedWorkers.length ? storedWorkers : sampleWorkers.map((w,i)=>({ id: w.id || ('w'+i), name: w.name || ('Worker '+(i+1)) }));
+
+      const equipment = document.getElementById('equipment');
+      const workerSelect = document.getElementById('workerSelect');
+
+      function populateEquipment(type){
+        equipment.innerHTML = '<option value="">Select equipment (optional)</option>';
+        if(!type || type === 'Lift') lifts.forEach(l=> equipment.appendChild(new Option('Lift - '+l,'Lift::'+l)));
+        if(!type || type === 'Chiller') chillers.forEach(c=> equipment.appendChild(new Option('Chiller - '+c,'Chiller::'+c)));
+      }
+
+      function populate(){
+        // populate equipment (all by default) and worker list
+        populateEquipment();
+
+        workerSelect.innerHTML = '<option value="">Assign task to worker</option>';
+        workers.forEach(w=> workerSelect.appendChild(new Option(w.name || w, w.id || w)));
+
+        // wire taskType change to filter equipment
+        const taskType = document.getElementById('taskType');
+        if(taskType){
+          taskType.addEventListener('change', (e)=>{ populateEquipment(e.target.value); });
+        }
+      }
+
+      const KEY = 'aiu_tasks';
+      function readTasks(){ try{ const r = localStorage.getItem(KEY); return r?JSON.parse(r):[] }catch(e){return[]} }
+      function saveTasks(t){ localStorage.setItem(KEY, JSON.stringify(t)); }
+
+      let tasks = readTasks();
+
+      function render(){
+        const body = document.getElementById('boardBody'); body.innerHTML='';
+        tasks.forEach(t=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td style="padding:12px;border-bottom:1px solid #eee">${t.title}</td><td style="padding:12px;border-bottom:1px solid #eee">${t.workerName||''}</td><td style="padding:12px;border-bottom:1px solid #eee">${t.type||''}</td><td style="padding:12px;border-bottom:1px solid #eee">${t.frequency||''}</td><td style="padding:12px;border-bottom:1px solid #eee">${t.deadline||''}</td><td style="padding:12px;border-bottom:1px solid #eee"><button data-id="${t.id}" class="remove">Remove</button></td>`;
+          body.appendChild(tr);
+        });
+        document.querySelectorAll('.remove').forEach(b=> b.addEventListener('click',(e)=>{ const id=e.currentTarget.getAttribute('data-id'); tasks = tasks.filter(x=>x.id!==id); saveTasks(tasks); render(); }));
+      }
+
+      document.getElementById('createBtn').addEventListener('click', ()=>{
+        const typeSel = document.getElementById('taskType').value;
+        const equipVal = equipment.value;
+        const title = document.getElementById('title').value.trim();
+        const freq = document.getElementById('freq').value;
+        const workerId = workerSelect.value;
+        const date = document.getElementById('date').value;
+        const desc = document.getElementById('desc').value.trim();
+        if(!typeSel){ alert('Select task type (Lift or Chiller)'); return; }
+        if(!title){ alert('Enter task title'); return; }
+        let equipName = '';
+        if(equipVal){ const parts = equipVal.split('::'); equipName = parts[1] || ''; }
+        const workerName = (workers.find(w=> (w.id||w) === workerId) || {}).name || '';
+        const id = 'T-'+Date.now().toString(36);
+        const newT = { id, title, description: desc, type: typeSel, equipment: equipName, frequency: freq, workerId, workerName, deadline: date };
+        tasks.unshift(newT); saveTasks(tasks); render();
+        // clear
+        document.getElementById('title').value=''; document.getElementById('desc').value=''; document.getElementById('date').value=''; equipment.value=''; workerSelect.value=''; document.getElementById('taskType').value='';
+      });
+
+      populate(); render();
+    })();
+  </script>
+</body>
+</html>

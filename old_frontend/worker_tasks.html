@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Tasks — Worker — AIU MMS</title>
+  <style>
+    :root{--bg:#f2f2f4;--sidebar:#fff;--accent:#6b46ff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111827}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:var(--sidebar);padding:28px;border-right:0}
+    .profile{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .avatar{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .nav{display:flex;flex-direction:column;gap:10px}
+    .nav a{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;color:#111827;text-decoration:none}
+    .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+    .main{flex:1;padding:20px}
+    .topbar{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .notif-btn{position:relative;border:0;background:transparent;padding:6px;font-size:18px;cursor:pointer}
+    .notif-badge{position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;border-radius:999px;padding:2px 6px;font-size:12px;display:none}
+    .notif-panel{position:absolute;right:22px;top:62px;width:320px;background:#fff;border-radius:8px;box-shadow:0 12px 30px rgba(2,6,23,.12);z-index:60}
+    .search{flex:1;padding:10px 12px;border-radius:12px;border:1px solid #e8e8ee}
+    .filters{display:flex;gap:8px}
+    .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,.04)}
+    .task{padding:12px;border-radius:8px;border:1px solid #f1f1f1;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start}
+    .task .meta{color:#666;font-size:13px}
+    @media (max-width:900px){ .sidebar{display:none} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="profile">
+        <div class="avatar" id="sideAvatar">W</div>
+        <div>
+          <div id="sideName" style="font-weight:700">Worker</div>
+          <div style="font-size:13px;color:var(--muted)">Technician</div>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Worker navigation">
+        <a href="worker.html"><span class="icon">🏠</span> Dashboard</a>
+        <a href="worker_tasks.html" class="active"><span class="icon">🧾</span> My Tasks</a>
+        <a href="worker_schedule.html"><span class="icon">�️</span> Schedule</a>
+        <a href="worker_reports.html"><span class="icon">�</span> Upload Report</a>
+  <a href="worker_manage.html"><span class="icon">⚙️</span> Manage Account</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <input id="q" class="search" placeholder="Search tasks or equipment" />
+        <div class="filters">
+          <select id="statusFilter" style="padding:8px;border-radius:8px;border:1px solid #e8e8ee">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="inprogress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+          <button id="clearBtn" class="btn" style="background:#6b7280">Clear</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative">
+            <button id="notifBtn" class="notif-btn">🔔</button>
+            <div id="notifBadge" class="notif-badge" aria-hidden="true">0</div>
+            <div id="notifPanel" class="notif-panel" style="display:none">
+              <div style="padding:10px;font-weight:700">Notifications</div>
+              <div id="notifList"></div>
+              <div style="padding:10px;text-align:center"><button id="clearNotifs" class="btn" style="background:#ef4444">Mark all read</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="list" class="card" style="margin-bottom:12px">
+        <div id="tasksCount" style="margin-bottom:12px;font-weight:700">My Tasks</div>
+        <div id="tasksContainer"></div>
+      </div>
+
+        <div class="notif-panel">
+          <!-- Notification panel content will be dynamically populated -->
+        </div>
+      <div class="card">
+        <h3 style="margin-top:0">Notes</h3>
+        <p class="task small-muted">Use the filters to find tasks. Set status to In Progress when you start, and Completed when done. Upload photo proof for completed tasks.</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function(){
+      try{
+        const user = JSON.parse(sessionStorage.getItem('aiu_user')||'null');
+        if(!user || user.role !== 'worker'){ window.location.href = 'login.html'; return; }
+        document.getElementById('sideName').textContent = user.name || user.username || 'Worker';
+        document.getElementById('sideAvatar').textContent = (user.name||'W').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+
+        const KEY = 'aiu_tasks';
+        function read(){ try{ const r = localStorage.getItem(KEY); return r?JSON.parse(r):[] }catch(e){return[];} }
+        function save(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
+
+  let tasks = read();
+  const SAMPLE_IMG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='480' height='320'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%236b46ff' font-size='20' font-family='Arial,Helvetica'>Sample Proof Image</text></svg>";
+        if(!tasks || tasks.length === 0){
+          // seed demo tasks for this worker
+          tasks = [
+            { id:'t1', title:'Inspect Lift A', description:'Check cables & brakes', type:'Lift', equipment:'Lift A', frequency:'weekly', workerId: user.id, workerName: user.name, status:'pending' },
+            { id:'t2', title:'Chiller filter clean', description:'Clean inlet filter', type:'Chiller', equipment:'Chiller 2', frequency:'monthly', workerId: user.id, workerName: user.name, status:'pending' }
+          ];
+          save(tasks);
+        }
+
+        function myTasks(){ return tasks.filter(t=> (t.workerId && user.id && t.workerId === user.id) || (t.workerName && t.workerName === user.name)); }
+
+        const container = document.getElementById('tasksContainer');
+        const countEl = document.getElementById('tasksCount');
+        const q = document.getElementById('q');
+        const statusFilter = document.getElementById('statusFilter');
+        const clearBtn = document.getElementById('clearBtn');
+
+        function render(){
+          const all = myTasks();
+          const filterStatus = statusFilter.value;
+          const query = q.value.trim().toLowerCase();
+          let list = all;
+          if(filterStatus !== 'all') list = list.filter(x=> x.status === filterStatus);
+          if(query) list = list.filter(x=> (x.title||'').toLowerCase().includes(query) || (x.equipment||'').toLowerCase().includes(query));
+
+          countEl.textContent = `My Tasks — ${list.length}`;
+          container.innerHTML = '';
+          if(list.length === 0){
+            container.innerHTML = `
+              <div class="small-muted">No tasks match your filters</div>
+              <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+                <input id="quickUpload" type="file" accept="image/*" capture="environment" style="display:none" />
+                <button id="quickUploadBtn" class="btn" style="background:#6b7280">Upload image now</button>
+              </div>
+              <div id="quickPreview" style="margin-top:12px"></div>
+            `;
+            document.getElementById('quickUploadBtn').addEventListener('click', ()=> document.getElementById('quickUpload').click());
+            document.getElementById('quickUpload').addEventListener('change', (e)=>{
+              const f = e.target.files && e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{ const img=r.result; document.getElementById('quickPreview').innerHTML = `<img src="${img}" style="max-width:220px;border-radius:8px;border:1px solid #eee"/>`; // save as report for demo
+                const reports = JSON.parse(localStorage.getItem('aiu_reports')||'[]'); reports.unshift({ id:'r_'+Date.now(), taskId:null, workerId: JSON.parse(sessionStorage.getItem('aiu_user')).id, workerName: JSON.parse(sessionStorage.getItem('aiu_user')).name, note:'Quick upload', image: img, createdAt: new Date().toISOString() }); localStorage.setItem('aiu_reports', JSON.stringify(reports)); alert('Uploaded (demo)'); } ; r.readAsDataURL(f); });
+            return;
+          }
+
+          list.forEach(task=>{
+            const t = document.createElement('div'); t.className='task';
+            t.innerHTML = `
+              <div>
+                <div style="font-weight:700">${escapeHtml(task.title)}</div>
+                <div class="meta">${escapeHtml(task.type)} — ${escapeHtml(task.equipment)} • ${escapeHtml(task.frequency)}</div>
+                <div style="margin-top:8px;color:#444">${escapeHtml(task.description||'')}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="margin-bottom:8px">${statusBadge(task.status||'pending')}</div>
+                <select data-id="${task.id}" class="statusSelect" style="margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid #e8e8ee">
+                  <option value="pending">Pending</option>
+                  <option value="inprogress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;margin-top:6px">
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <input id="file-${task.id}" type="file" data-id="${task.id}" accept="image/*" class="proofInput" capture="environment" style="display:none" />
+                    <button data-target="file-${task.id}" class="btn openUpload" style="background:#4c51bf">Upload</button>
+                    <button data-id="${task.id}" class="btn sampleBtn" style="background:#6b7280">Use sample</button>
+                  </div>
+                  <button data-id="${task.id}" class="btn saveProof">Save Proof</button>
+                </div>
+                <div id="preview-${task.id}" style="margin-top:8px"></div>
+              </div>
+            `;
+            container.appendChild(t);
+          });
+
+          // wire selects, inputs and save buttons
+          document.querySelectorAll('.statusSelect').forEach(s=>{ const id=s.getAttribute('data-id'); const task = tasks.find(x=>x.id===id); if(task) s.value = task.status||'pending'; s.addEventListener('change',(e)=>{ setStatus(id,e.target.value); }); });
+          document.querySelectorAll('.proofInput').forEach(inp=>{ const id=inp.getAttribute('data-id'); const task = tasks.find(x=>x.id===id); if(task && task.proof) document.getElementById('preview-'+id).innerHTML = `<img src="${task.proof}" style="max-width:140px;border-radius:8px;border:1px solid #eee"/>`; inp.addEventListener('change',(e)=>{ const f = e.target.files && e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{ inp.dataset.preview = r.result; document.getElementById('preview-'+id).innerHTML = `<img src="${r.result}" style="max-width:140px;border-radius:8px;border:1px solid #eee"/>`; }; r.readAsDataURL(f); }); });
+          // wire Upload buttons to open the hidden file inputs
+          document.querySelectorAll('.openUpload').forEach(b=> b.addEventListener('click',(e)=>{ const target = e.currentTarget.getAttribute('data-target'); const inp = document.getElementById(target); if(inp) inp.click(); }));
+          // wire Upload buttons
+          document.querySelectorAll('.openUpload').forEach(b=> b.addEventListener('click',(e)=>{ const target = e.currentTarget.getAttribute('data-target'); const inp = document.getElementById(target); if(inp) inp.click(); }));
+          document.querySelectorAll('.sampleBtn').forEach(b=> b.addEventListener('click',(e)=>{ const id=e.currentTarget.getAttribute('data-id'); const inp = document.querySelector(`input.proofInput[data-id="${id}"]`); if(inp){ inp.dataset.preview = SAMPLE_IMG; document.getElementById('preview-'+id).innerHTML = `<img src="${SAMPLE_IMG}" style="max-width:140px;border-radius:8px;border:1px solid #eee"/>`; } }));
+          document.querySelectorAll('.saveProof').forEach(b=> b.addEventListener('click',(e)=>{ const id=e.currentTarget.getAttribute('data-id'); const inp=document.querySelector(`input.proofInput[data-id="${id}"]`); const data = (inp && inp.dataset && inp.dataset.preview) || null; if(!data){ alert('Choose an image or Use sample to demo'); return; } const idx = tasks.findIndex(x=>x.id===id); if(idx===-1) return; tasks[idx].proof = data; save(tasks); alert('Proof saved (local demo)'); render(); }));
+        }
+
+        function setStatus(id,status){ const idx=tasks.findIndex(x=>x.id===id); if(idx===-1) return; tasks[idx].status = status; if(status==='completed') tasks[idx].completedAt = new Date().toLocaleString(); save(tasks); render(); }
+        function statusBadge(s){ if(s==='completed') return '<span style="background:#10b981;color:#fff;padding:6px 10px;border-radius:999px;">Completed</span>'; if(s==='inprogress') return '<span style="background:#0ea5e9;color:#fff;padding:6px 10px;border-radius:999px;">In Progress</span>'; return '<span style="background:#f59e0b;color:#422006;padding:6px 10px;border-radius:999px;">Pending</span>'; }
+        function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        q.addEventListener('input', render);
+        statusFilter.addEventListener('change', render);
+        clearBtn.addEventListener('click', ()=>{ q.value=''; statusFilter.value='all'; render(); });
+
+        render();
+
+        // (topbar upload removed) -- quick upload button removed from topbar per request
+
+      }catch(e){ console.error(e); window.location.href='login.html'; }
+    })();
+  </script>
+  <script>
+    // notifications for tasks page
+    (function(){
+      function getAssignedTasks(){ try{ const arr = JSON.parse(localStorage.getItem('aiu_tasks')||'[]'); const session = JSON.parse(sessionStorage.getItem('aiu_user')||'null')||{}; const name = session.name || session.username; return arr.filter(t=> (t.workerId && session.id && t.workerId === session.id) || (t.workerName && t.workerName === name)); }catch(e){return[];} }
+      const notifBtn = document.getElementById('notifBtn');
+      const notifBadge = document.getElementById('notifBadge');
+      const notifPanel = document.getElementById('notifPanel');
+      const notifList = document.getElementById('notifList');
+      const clearNotifs = document.getElementById('clearNotifs');
+      function renderNotifs(){ const tasks = getAssignedTasks(); const unread = tasks.filter(t=> t.status === 'pending' ); if(unread.length>0){ notifBadge.style.display='inline-block'; notifBadge.textContent = unread.length; } else { notifBadge.style.display='none'; }
+        notifList.innerHTML=''; const sample = unread.length?unread:tasks.slice(0,5); if(sample.length===0) notifList.innerHTML = '<div class="muted" style="padding:10px">No notifications</div>';
+        sample.forEach(t=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div style="font-weight:700">${t.title}</div><div style="font-size:13px;color:#6b7280">${t.equipment} — ${new Date(t.createdAt||Date.now()).toLocaleString()}</div><div style="margin-top:6px"><button class="btn openTask" data-id="${t.id}">Open</button></div>`; notifList.appendChild(div); });
+        document.querySelectorAll('.openTask').forEach(b=> b.addEventListener('click',(e)=>{ const id=e.currentTarget.getAttribute('data-id'); window.location.hash = id; document.getElementById(id) && document.getElementById(id).scrollIntoView({behavior:'smooth'}); notifPanel.style.display='none'; })); }
+      notifBtn && notifBtn.addEventListener('click', ()=>{ if(notifPanel) notifPanel.style.display = notifPanel.style.display === 'none' ? 'block' : 'none'; renderNotifs(); });
+      clearNotifs && clearNotifs.addEventListener('click', ()=>{ const tasks = JSON.parse(localStorage.getItem('aiu_tasks')||'[]'); const session = JSON.parse(sessionStorage.getItem('aiu_user')||'null')||{}; const name = session.name || session.username; const updated = tasks.map(t=>{ if((t.workerId && session.id && t.workerId===session.id) || (t.workerName && t.workerName===name)) { t.status = t.status==='pending' ? 'inprogress' : t.status; } return t; }); localStorage.setItem('aiu_tasks', JSON.stringify(updated)); renderNotifs(); location.reload(); });
+      renderNotifs();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,433 @@
+/* Simple clean responsive styles */
+:root{
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --muted:#6b7280;
+  --accent:#2563eb;
+  --danger:#ef4444;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111827}
+.container{max-width:1100px;margin:28px auto;padding:18px}
+.center{display:flex;align-items:center;justify-content:center;height:80vh}
+.card{background:var(--card);border-radius:10px;box-shadow:0 6px 20px rgba(2,6,23,.08);padding:18px}
+.login-card{width:380px;text-align:left}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+input,select{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:1px solid #e6eef6}
+label{font-weight:600;font-size:.95rem}
+.btn{display:inline-block;padding:10px 14px;border-radius:8px;border:0;cursor:pointer}
+.btn.primary{background:var(--accent);color:white}
+.topbar{display:flex;align-items:center;justify-content:space-between}
+.row{display:flex;gap:18px}
+.col{flex:1}
+.sidebar{width:240px}
+.main{flex:1}
+.app{display:flex;gap:18px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.kpi{display:flex;gap:12px}
+.kpi .tile{flex:1;padding:12px;border-radius:8px;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:0 4px 12px rgba(2,6,23,.04)}
+.card.small{padding:12px}
+.task{padding:10px;border-radius:8px;border:1px solid #edf2f7;margin-bottom:8px}
+.task .meta{font-size:.85rem;color:var(--muted)}
+.badge{font-weight:700;padding:6px 8px;border-radius:999px;background:#eef2ff;color:var(--accent);font-size:.85rem}
+.flex{display:flex;align-items:center;gap:8px}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:8px;text-align:left;border-bottom:1px solid #f3f6fb}
+.form-inline{display:flex;gap:8px}
+.avatar{width:36px;height:36px;border-radius:50%;background:#c7d2fe;display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#3730a3}
+.report-box{border:2px dashed #e2e8f0;padding:24px;text-align:center;border-radius:8px}
+.small-muted{font-size:.9rem;color:var(--muted)}
+@media (max-width:900px){
+  .app{flex-direction:column}
+  .sidebar{width:100%}
+  .kpi{flex-wrap:wrap}
+  .kpi .tile{min-width:calc(50% - 6px)}
+  .row{flex-direction:column}
+}
+
+/* Mobile-specific responsive enhancements */
+@media (max-width:768px){
+  body{font-size:16px} /* Prevents zoom on iOS */
+  .container{padding:12px;margin:12px auto}
+  .card{padding:14px}
+  .login-card{width:95%;max-width:380px}
+
+  /* Touch-friendly buttons and inputs */
+  input, select, .btn, button, a.btn{
+    min-height:44px;
+    font-size:16px;
+    padding:12px;
+  }
+
+  /* Ensure text inputs don't cause zoom */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="time"],
+  select,
+  textarea{
+    font-size:16px !important;
+  }
+
+  /* KPI tiles stack on mobile */
+  .kpi{flex-direction:column;gap:10px}
+  .kpi .tile{min-width:100%;padding:14px}
+
+  /* Task cards optimization */
+  .task{padding:12px;margin-bottom:10px}
+  .task .meta{font-size:0.9rem}
+
+  /* Table responsiveness - convert to cards on mobile */
+  .table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table thead{display:none}
+  .table tbody{display:block}
+  .table tr{display:block;margin-bottom:12px;border:1px solid #edf2f7;border-radius:8px;padding:12px;background:white}
+  .table td{display:block;text-align:right;padding:8px 0;border:0}
+  .table td:before{content:attr(data-label);float:left;font-weight:600;color:var(--muted)}
+
+  /* Flex utilities */
+  .flex{flex-wrap:wrap}
+  .row{gap:12px}
+
+  /* Form inline to stack on mobile */
+  .form-inline{flex-direction:column}
+  .form-inline input, .form-inline select, .form-inline .btn{width:100%}
+
+  /* Avatar sizing */
+  .avatar{width:44px;height:44px;font-size:18px}
+
+  /* Header spacing */
+  .header{flex-direction:column;align-items:flex-start;gap:12px}
+
+  /* Topbar stacking */
+  .topbar{flex-direction:column;gap:12px;align-items:stretch}
+
+  /* Report box mobile optimization */
+  .report-box{padding:18px}
+
+  /* Better button groups on mobile */
+  .btn-group{display:flex;flex-direction:column;gap:10px;width:100%}
+  .btn-group .btn{width:100%}
+
+  /* Improve spacing on mobile */
+  h1{font-size:24px}
+  h2{font-size:20px}
+  h3{font-size:18px}
+
+  /* Horizontal scroll for wide tables */
+  .table-wrapper{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin:0 -12px;
+    padding:0 12px;
+  }
+
+  /* Card spacing on mobile */
+  .card + .card{margin-top:12px}
+
+  /* Grid layouts should stack */
+  div[style*="display:grid"],
+  div[style*="display: grid"]{
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+
+  /* Ensure proper stacking for flex containers */
+  div[style*="display:flex"][style*="gap"]:not(.flex):not(.row):not(.kpi){
+    flex-direction:column !important;
+  }
+
+  /* Better modal sizing */
+  div[style*="position:fixed"][style*="inset:0"]{
+    padding:0 !important;
+  }
+
+  /* Lists and notifications on mobile */
+  .notif-item{
+    padding:10px !important;
+  }
+
+  /* Better overflow handling */
+  *{
+    max-width:100%;
+  }
+
+  /* Print button and action buttons */
+  button[onclick*="print"],
+  button[onclick*="window.print"]{
+    width:100%;
+    margin-bottom:10px;
+  }
+
+  /* Improve select dropdowns on mobile */
+  select{
+    background-size:12px;
+    background-position:right 8px center;
+  }
+
+  /* Better textarea sizing */
+  textarea{
+    min-height:100px !important;
+  }
+
+  /* Links should be touch-friendly */
+  a{
+    min-height:44px;
+    display:inline-flex;
+    align-items:center;
+  }
+
+  /* Status badges should wrap nicely */
+  span[style*="padding"][style*="border-radius"]{
+    display:inline-block;
+    margin:2px 0;
+  }
+
+  /* Forms should have proper spacing */
+  form > div{
+    margin-bottom:14px !important;
+  }
+
+  /* Labels should be readable */
+  label{
+    font-size:15px !important;
+    margin-bottom:8px !important;
+  }
+
+  /* Better image handling */
+  img{
+    max-width:100% !important;
+    height:auto !important;
+  }
+
+  /* Fix inline styles that might break mobile */
+  div[style*="display:flex"]{
+    flex-wrap:wrap !important;
+  }
+
+  /* Ensure containers don't overflow */
+  .main, .main-content{
+    overflow-x:hidden !important;
+  }
+
+  /* Fix wide content */
+  pre, code{
+    max-width:100%;
+    overflow-x:auto;
+    word-wrap:break-word;
+  }
+
+  /* Better handling of long text */
+  h1, h2, h3, h4, h5, h6{
+    word-wrap:break-word;
+    overflow-wrap:break-word;
+  }
+
+  /* Fix notification items on mobile */
+  .notif-item{
+    flex-direction:column !important;
+    align-items:flex-start !important;
+  }
+
+  /* Better KPI tile sizing on mobile */
+  .kpis{
+    flex-direction:column !important;
+  }
+
+  .kpi{
+    width:100% !important;
+    min-width:unset !important;
+  }
+
+  /* Ensure cards are full width */
+  .card{
+    width:100% !important;
+    max-width:100% !important;
+  }
+
+  /* Fix any fixed-width elements */
+  div[style*="width"]:not([style*="max-width"]){
+    max-width:100% !important;
+  }
+
+  /* Better sidebar behavior */
+  .sidebar{
+    max-width:280px !important;
+  }
+
+  /* Fix action button groups */
+  div[style*="display:flex"][style*="gap"] > a,
+  div[style*="display:flex"][style*="gap"] > button{
+    flex:1 1 auto;
+    min-width:0;
+  }
+
+  /* Improve text readability */
+  p, span, div{
+    word-wrap:break-word;
+    overflow-wrap:break-word;
+  }
+
+  /* Fix any absolute positioned elements */
+  div[style*="position:absolute"]{
+    position:static !important;
+  }
+
+  /* Better handling of flex containers in content */
+  .main-content div[style*="display:flex"]{
+    gap:10px !important;
+  }
+
+  /* Ensure proper spacing for all content */
+  .main{
+    padding:12px !important;
+  }
+}
+
+/* Camera and image preview styling */
+input[type="file"][accept*="image"]{
+  padding:12px;
+  border:2px dashed var(--accent);
+  border-radius:12px;
+  background:rgba(37, 99, 235, 0.03);
+  cursor:pointer;
+  font-size:14px;
+  transition:all 0.2s;
+}
+input[type="file"][accept*="image"]:hover{
+  border-color:#1e40af;
+  background:rgba(37, 99, 235, 0.06);
+}
+.image-preview{
+  max-width:100%;
+  height:auto;
+  border-radius:8px;
+  margin:12px 0;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Safe area for notched devices */
+@supports (padding:max(0px)){
+  .container{
+    padding-left:max(18px, env(safe-area-inset-left));
+    padding-right:max(18px, env(safe-area-inset-right));
+    padding-bottom:max(18px, env(safe-area-inset-bottom));
+  }
+}
+/* simple notifications */
+.notifications{position:fixed;right:18px;top:18px;display:flex;flex-direction:column;gap:8px;z-index:999;max-width:calc(100vw - 36px)}
+.note{background:#fff;border-radius:8px;padding:10px 12px;box-shadow:0 6px 18px rgba(2,6,23,.12);word-wrap:break-word}
+.note.small{font-size:.9rem}
+
+/* Extra small devices (phones < 375px) */
+@media (max-width:375px){
+  body{font-size:14px}
+  .container{padding:8px;margin:8px auto}
+  .card{padding:10px}
+  h1{font-size:20px !important}
+  h2{font-size:18px !important}
+  h3{font-size:16px !important}
+  .notifications{right:8px;top:8px;max-width:calc(100vw - 16px)}
+}
+
+/* Enhanced table mobile responsiveness */
+@media (max-width:768px){
+  /* Convert tables to cards with data labels */
+  table.table:not(.no-mobile-cards){
+    border:0;
+  }
+
+  table.table:not(.no-mobile-cards) thead{
+    clip:rect(0 0 0 0);
+    height:1px;
+    overflow:hidden;
+    padding:0;
+    position:absolute;
+    width:1px;
+  }
+
+  table.table:not(.no-mobile-cards) tr{
+    border:1px solid #e5e7eb;
+    display:block;
+    margin-bottom:12px;
+    background:white;
+    border-radius:8px;
+    padding:12px;
+  }
+
+  table.table:not(.no-mobile-cards) td{
+    border-bottom:1px solid #f3f4f6;
+    display:block;
+    text-align:right;
+    padding:10px 0;
+  }
+
+  table.table:not(.no-mobile-cards) td:last-child{
+    border-bottom:0;
+  }
+
+  table.table:not(.no-mobile-cards) td:before{
+    content:attr(data-label);
+    float:left;
+    font-weight:600;
+    color:#6b7280;
+    font-size:13px;
+  }
+
+  /* Actions column should stack on mobile */
+  table.table td div[style*="display:flex"]{
+    flex-direction:column !important;
+    gap:8px !important;
+  }
+
+  table.table td div[style*="display:flex"] a,
+  table.table td div[style*="display:flex"] button,
+  table.table td div[style*="display:flex"] form{
+    width:100% !important;
+    display:block !important;
+  }
+
+  table.table td div[style*="display:flex"] button,
+  table.table td div[style*="display:flex"] a{
+    text-align:center;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height:500px) and (orientation:landscape){
+  .sidebar{width:240px;font-size:14px}
+  .nav a{padding:8px;min-height:40px}
+  .nav a .icon{width:36px;height:36px;font-size:18px}
+  .sidebar-toggle{top:10px;width:36px;height:36px;font-size:18px}
+  .kpi{padding:14px !important}
+  .tile{height:80px !important}
+  body{font-size:14px}
+}
+
+/* Ensure horizontal scrolling for wide tables when needed */
+@media (max-width:768px){
+  .table-responsive{
+    display:block;
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Pagination mobile styling */
+  .pagination{
+    flex-wrap:wrap;
+    gap:4px !important;
+  }
+
+  .pagination a,
+  .pagination span{
+    min-width:40px;
+    text-align:center;
+    padding:8px !important;
+    font-size:14px !important;
+  }
+}

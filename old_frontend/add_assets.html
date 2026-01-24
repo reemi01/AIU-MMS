@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Add Lift And Chiller — AIU MMS</title>
+  <style>
+    :root{--bg:#ececec;--dark:#26292c;--muted:#999;--accent:#111}
+    body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:#111}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:#fff;padding:28px;border-right:0}
+    .profile{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02))}
+    .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:20px}
+    .nav a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;color:#111;text-decoration:none}
+    .nav a .icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));display:inline-flex;align-items:center;justify-content:center}
+    .nav a.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));font-weight:700}
+
+    .main{flex:1;padding:22px}
+    h1{font-size:26px;margin:6px 0 18px;font-weight:800}
+    .panel{background:var(--dark);color:white;padding:26px;border-radius:6px;margin-bottom:28px}
+    .panel h2{margin:0 0 12px;font-size:22px}
+    .row{display:flex;gap:12px;align-items:center}
+    .input{padding:12px 16px;border-radius:18px;border:0;width:420px;font-size:16px}
+    .add-btn{padding:10px 16px;border-radius:14px;border:0;background:white;color:var(--dark);cursor:pointer}
+    .list{margin-top:12px;background:#fff;padding:12px;border-radius:6px;color:#111}
+    .item{padding:8px 10px;border-bottom:1px solid #eee}
+    @media (max-width:900px){ .sidebar{display:none}.input{width:100%}.row{flex-direction:column;align-items:flex-start} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="profile">
+        <div class="avatar">A</div>
+        <div>
+          <h4 id="adminName">Admin</h4>
+          <p style="margin:0;color:var(--muted);font-size:13px">Administrator</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="admin_dashboard.html"><span class="icon">🏠</span> Home</a>
+        <a href="employee.html"><span class="icon">👥</span> Employee</a>
+        <a href="weekly_monthly.html"><span class="icon">🗓️</span> weekly/monthly tasks</a>
+        <a href="report.html"><span class="icon">📊</span> Report</a>
+        <a href="information.html"><span class="icon">ℹ️</span> Information</a>
+         <a href="addtasks.html"><span class="icon">👥</span> Add tasks</a>
+          <a href="add_assets.html" class="active"><span class="icon">➕</span> Add Lift/Chiller</a>
+         
+      
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Add Lift And Chiller</h1>
+
+      <div class="panel">
+        <h2>LIFT</h2>
+        <div class="row" style="margin-top:12px">
+          <input id="liftName" class="input" placeholder="Name of the lift" />
+          <button id="addLift" class="add-btn">Add</button>
+        </div>
+        <div id="liftList" class="list" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Chiller</h2>
+        <div class="row" style="margin-top:12px">
+          <input id="chillerName" class="input" placeholder="Name of the chiller" />
+          <button id="addChiller" class="add-btn">Add</button>
+        </div>
+        <div id="chillerList" class="list" aria-live="polite"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    (function(){
+      try{ const user = JSON.parse(sessionStorage.getItem('aiu_user')||'null'); if(user && user.name) document.getElementById('adminName').textContent = user.name; }catch(e){}
+
+      const LKEY = 'aiu_lifts_v1';
+      const CKEY = 'aiu_chillers_v1';
+
+      function read(key){ try{ const r = localStorage.getItem(key); return r?JSON.parse(r):[] }catch(e){return[]} }
+      function save(key,arr){ localStorage.setItem(key, JSON.stringify(arr)); }
+
+      let lifts = read(LKEY);
+      let chillers = read(CKEY);
+
+      const liftList = document.getElementById('liftList');
+      const chillerList = document.getElementById('chillerList');
+
+      function render(){
+        liftList.innerHTML = '';
+        lifts.forEach((l, idx)=>{
+          const d = document.createElement('div'); d.className='item';
+          d.innerHTML = `<span style="display:inline-block;width:80%">${escapeHtml(l)}</span><button class="remove-btn" data-type="lift" data-index="${idx}" style="float:right;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:6px 8px;border-radius:6px;cursor:pointer">Delete</button>`;
+          liftList.appendChild(d);
+        });
+        chillerList.innerHTML = '';
+        chillers.forEach((c, idx)=>{
+          const d = document.createElement('div'); d.className='item';
+          d.innerHTML = `<span style="display:inline-block;width:80%">${escapeHtml(c)}</span><button class="remove-btn" data-type="chiller" data-index="${idx}" style="float:right;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:6px 8px;border-radius:6px;cursor:pointer">Delete</button>`;
+          chillerList.appendChild(d);
+        });
+      }
+
+      // simple HTML escape to avoid injection when rendering user input
+      function escapeHtml(str){
+        return String(str).replace(/[&<>"']/g, function(s){
+          return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[s];
+        });
+      }
+
+      document.getElementById('addLift').addEventListener('click', ()=>{
+        const v = document.getElementById('liftName').value.trim(); if(!v) return; lifts.push(v); save(LKEY,lifts); document.getElementById('liftName').value=''; render();
+      });
+      document.getElementById('addChiller').addEventListener('click', ()=>{
+        const v = document.getElementById('chillerName').value.trim(); if(!v) return; chillers.push(v); save(CKEY,chillers); document.getElementById('chillerName').value=''; render();
+      });
+
+      // delegate remove clicks
+      liftList.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.remove-btn');
+        if(!btn) return;
+        const type = btn.getAttribute('data-type');
+        const idx = Number(btn.getAttribute('data-index'));
+        if(type === 'lift'){
+          if(!Number.isNaN(idx) && idx >=0 && idx < lifts.length){
+            if(!confirm('Delete lift "'+lifts[idx]+'"? This cannot be undone.')) return;
+            lifts.splice(idx,1); save(LKEY,lifts); render();
+          }
+        }
+      });
+      chillerList.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.remove-btn');
+        if(!btn) return;
+        const type = btn.getAttribute('data-type');
+        const idx = Number(btn.getAttribute('data-index'));
+        if(type === 'chiller'){
+          if(!Number.isNaN(idx) && idx >=0 && idx < chillers.length){
+            if(!confirm('Delete chiller "'+chillers[idx]+'"? This cannot be undone.')) return;
+            chillers.splice(idx,1); save(CKEY,chillers); render();
+          }
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
