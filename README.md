@@ -54,7 +54,7 @@ A comprehensive Laravel 12 + Blade-based maintenance management system designed 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/AdilAzhari/AIU-MMS
+git clone https://github.com/reem01/AIU-MMS
 cd AIU-MMS
 ```
 
@@ -63,9 +63,6 @@ cd AIU-MMS
 ```bash
 # Install PHP dependencies
 composer install
-
-# Install JavaScript dependencies
-npm install
 ```
 
 ### 3. Environment Configuration
@@ -92,15 +89,7 @@ DB_USERNAME=root
 DB_PASSWORD=your_password
 ```
 
-**For SQLite (default):**
-```env
-DB_CONNECTION=sqlite
-```
 
-If using SQLite, create the database file:
-```bash
-touch database/database.sqlite
-```
 
 ### 5. Run Migrations and Seeders
 
@@ -150,17 +139,6 @@ npm run dev
 
 Visit http://localhost:8000 in your browser.
 
-## Configuration
-
-### Queue Configuration
-
-The system uses database queues. Make sure to run the queue worker:
-
-```bash
-php artisan queue:work
-```
-
-For production, configure a supervisor to keep the queue worker running.
 
 ### Session Configuration
 
@@ -235,80 +213,9 @@ AIU-MMS/
 - **Session**: Database-backed sessions
 - **Cache**: Database-backed cache
 
-## Development
 
-### Running Tests
 
-```bash
-# Run all tests
-composer test
 
-# Or using PHPUnit directly
-php artisan test
-```
 
-### Code Style
-
-The project uses Laravel Pint for code styling:
-
-```bash
-./vendor/bin/pint
-```
-
-### Development Tools
-
-- **Laravel Pail**: Real-time log viewing
-  ```bash
-  php artisan pail
-  ```
-
-- **Tinker**: Interactive REPL
-  ```bash
-  php artisan tinker
-  ```
-
-- **Sail**: Docker development environment (optional)
-  ```bash
-  ./vendor/bin/sail up
-  ```
-
-### Common Development Tasks
-
-```bash
-# Clear all caches
-php artisan optimize:clear
-
-# Run migrations
-php artisan migrate
-
-# Rollback migrations
-php artisan migrate:rollback
-
-# Seed database
-php artisan db:seed
-
-# Create a new controller
-php artisan make:controller ControllerName
-
-# Create a new model
-php artisan make:model ModelName -m
-```
-
-## Testing
-
-The project includes PHPUnit for testing. Tests are located in the `tests/` directory.
-
-```bash
-# Run all tests
-php artisan test
-
-# Run specific test file
-php artisan test --filter TestClassName
-
-# Run with coverage
-php artisan test --coverage
-```
-
-## License
 
 This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
